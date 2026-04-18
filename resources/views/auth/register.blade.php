@@ -24,6 +24,38 @@
     .iti--allow-dropdown .iti__flag-container:hover .iti__selected-flag { background: rgba(0,0,0,0.05) !important; }
     .iti input { padding-left: 60px !important; }
     .iti__country-list, .iti--inline-dropdown .iti__dropdown-content { z-index: 12 !important; background-color: white !important; }
+
+    /* Location Autocomplete Styles */
+    .location-wrapper { position: relative; }
+    .location-suggestions { 
+        position: absolute; 
+        top: 100%; 
+        left: 0; 
+        width: 100%; 
+        background: white; 
+        border: 1px solid #eee; 
+        border-radius: 10px; 
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+        z-index: 1000; 
+        max-height: 250px; 
+        overflow-y: auto; 
+        display: none;
+        margin-top: 5px;
+    }
+    .suggestion-item { 
+        padding: 12px 15px; 
+        cursor: pointer; 
+        transition: all 0.2s; 
+        border-bottom: 1px solid #f8f9fa;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item:hover { background: #f8f9fa; color: #f76156; }
+    .suggestion-item i { color: #adb5bd; }
+    .location-loading { padding: 10px; font-size: 0.8rem; color: #666; text-align: center; }
 </style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@21.0.8/build/css/intlTelInput.css">
 @endpush
@@ -60,9 +92,10 @@
                       <input type="hidden" name="phone" id="full_phone">
                       <x-input-error :messages="$errors->get('phone')" class="mt-2" />
                     </div>
-                    <div class="auth-input-group">
+                    <div class="auth-input-group location-wrapper">
                       <i class="bi bi-geo-alt auth-input-icon"></i>
-                      <input type="text" name="location" class="form-control auth-input" placeholder="Location" value="{{ old('location') }}">
+                      <input type="text" name="location" id="location_field" class="form-control auth-input" placeholder="Location" value="{{ old('location') }}" autocomplete="off">
+                      <div id="location_suggestions" class="location-suggestions"></div>
                       <x-input-error :messages="$errors->get('location')" class="mt-2" />
                     </div>
                     <div class="auth-input-group">
@@ -165,6 +198,60 @@
             } else {
                 this.classList.remove('is-invalid');
                 emailError.style.display = 'none';
+            }
+        });
+
+        // Location Autocomplete Logic
+        const locationInput = document.querySelector("#location_field");
+        const suggestionsBox = document.querySelector("#location_suggestions");
+        let debounceTimer;
+
+        locationInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+
+            suggestionsBox.innerHTML = '<div class="location-loading"><i class="bi bi-arrow-repeat spin"></i> Searching...</div>';
+            suggestionsBox.style.display = 'block';
+
+            debounceTimer = setTimeout(() => {
+                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`)
+                    .then(response => response.json())
+                    .then(data => {
+                        suggestionsBox.innerHTML = '';
+                        if (data.features && data.features.length > 0) {
+                            data.features.forEach(feature => {
+                                const city = feature.properties.city || feature.properties.name || '';
+                                const country = feature.properties.country || '';
+                                const state = feature.properties.state || '';
+                                const fullLocation = [city, state, country].filter(item => item !== '').join(', ');
+
+                                const div = document.createElement('div');
+                                div.className = 'suggestion-item';
+                                div.innerHTML = `<i class="bi bi-geo-alt"></i> <span>${fullLocation}</span>`;
+                                div.onclick = () => {
+                                    locationInput.value = fullLocation;
+                                    suggestionsBox.style.display = 'none';
+                                };
+                                suggestionsBox.appendChild(div);
+                            });
+                            suggestionsBox.style.display = 'block';
+                        } else {
+                            suggestionsBox.style.display = 'none';
+                        }
+                    })
+                    .catch(err => console.error('Location API Error:', err));
+            }, 300);
+        });
+
+        // Close suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!locationInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.style.display = 'none';
             }
         });
     });

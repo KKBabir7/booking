@@ -3,125 +3,78 @@
 @section('navClass', 'sticky-nav-dark')
 
 @push('styles')
-    <style>
-        .auth-section {
-            margin-top: 100px;
-        }
-
-        .auth-card {
-            background-color: #1e293b;
-            /* Dark theme background for card to match image */
-            border-radius: 12px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .auth-input-group {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        .auth-input-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #adb5bd;
-        }
-
-        .auth-input {
-            padding-left: 45px !important;
-            border-radius: 8px !important;
-            height: 50px;
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: white;
-        }
-
-        .auth-input:focus {
-            border-color: #f76156;
-            background: #0f172a;
-            color: white;
-            box-shadow: 0 0 0 0.25rem rgba(247, 97, 86, 0.25);
-        }
-
-        .auth-input::placeholder {
-            color: #64748b;
-        }
-
-        .btn-auth-primary {
-            background: white;
-            border: none;
-            color: #0f172a;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-auth-primary:hover {
-            background: #f1f5f9;
-            transform: translateY(-2px);
-        }
-
-        body {
-            background-color: #0f172a;
-        }
-
-        /* Dark body background similar to image */
-    </style>
+<link rel="stylesheet" href="{{ asset('assets/css/signup.css') }}" />
+<style>
+    .auth-section { margin-top: 0px; }
+    .auth-card { border-radius: 20px; overflow: hidden; background: white; }
+    .auth-input-group { position: relative; margin-bottom: 20px; }
+    .auth-input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #adb5bd; z-index: 10; }
+    .auth-input { padding-left: 45px !important; border-radius: 10px !important; height: 50px; border: 1px solid #eee; }
+    .auth-input:focus { border-color: #f76156; box-shadow: 0 0 0 0.25rem rgba(247, 97, 86, 0.1); }
+    .btn-auth-primary { background: #f76156; border: none; color: white; border-radius: 50px; font-weight: 600; transition: all 0.3s; }
+    .btn-auth-primary:hover { background: #e54b40; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(247, 97, 86, 0.3); color: white; }
+    .verification-icon { width: 80px; height: 80px; background: rgba(247, 97, 86, 0.1); color: #f76156; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; font-size: 35px; }
+    .auth-overlay { background: linear-gradient(135deg, #f76156, #ff8e86); color: white; }
+</style>
 @endpush
 
 @section('content')
-    <div class="auth-section pb-5" style="min-height: 70vh; display: flex; align-items: center;">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-8 col-lg-6 col-xl-5">
-                    <!-- Optional Logo -->
-                    <div class="text-center mb-4">
-                        <a href="{{ route('home') }}" class="text-decoration-none">
-                            <span class="fs-1 fw-bold text-white"><i class="bi bi-box" style="color: #f76156;"></i>
-                                NGH</span>
-                        </a>
-                    </div>
+<div class="auth-section">
+    <div class="container">
+      <div class="row min-vh-100 align-items-center justify-content-center py-5">
+        <div class="col-lg-10 col-xl-9">
+          <div class="auth-card shadow-lg border-0">
+            <div class="row g-0">
+              <!-- Left: Form side -->
+              <div class="col-md-7 p-4 p-lg-5 bg-white">
+                <div class="auth-box">
+                  <div class="verification-icon">
+                    <i class="bi bi-shield-lock"></i>
+                  </div>
+                  
+                  <h2 class="fw-bold mb-3 text-center" style="color: #2d3436;">Forgot Password?</h2>
+                  
+                  <p class="text-center text-muted small mb-4">
+                    {{ __('No problem. Just let us know your email address and we will email you a password reset link.') }}
+                  </p>
 
-                    <div class="auth-card shadow p-4 p-md-5">
-                        <div class="mb-4 text-sm" style="color: #94a3b8; font-size: 0.95rem; line-height: 1.6;">
-                            {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
-                        </div>
+                  <!-- Session Status -->
+                  <x-auth-session-status class="mb-4" :status="session('status')" />
 
-                        <!-- Session Status -->
-                        <x-auth-session-status class="mb-4" :status="session('status')" />
-
-                        <form method="POST" action="{{ route('password.email') }}">
-                            @csrf
-
-                            <!-- Email Address -->
-                            <div class="auth-input-group mb-4">
-                                <label for="email"
-                                    class="form-label text-white-50 small fw-bold mb-2">{{ __('Email') }}</label>
-                                <input id="email" type="email" name="email" class="form-control auth-input"
-                                    placeholder="Enter your email address" value="{{ old('email') }}" required autofocus>
-                                <x-input-error :messages="$errors->get('email')" class="mt-2 text-danger" />
-                            </div>
-
-                            <div class="d-flex justify-content-end mt-4">
-                                <button type="submit" class="btn btn-auth-primary px-4 py-2 w-100 uppercase"
-                                    style="font-size: 0.85rem;">
-                                    {{ __('Email Password Reset Link') }}
-                                </button>
-                            </div>
-                        </form>
+                  <form method="POST" action="{{ route('password.email') }}">
+                    @csrf
+                    <div class="auth-input-group">
+                      <i class="bi bi-envelope auth-input-icon"></i>
+                      <input id="email" type="email" name="email" class="form-control auth-input" placeholder="Enter your email address" value="{{ old('email') }}" required autofocus>
+                      <x-input-error :messages="$errors->get('email')" class="mt-2" />
                     </div>
 
                     <div class="text-center mt-4">
-                        <a href="{{ route('login') }}" class="text-decoration-none"
-                            style="color: #94a3b8; font-size: 0.9rem;">
-                            <i class="bi bi-arrow-left me-1"></i> Back to login
-                        </a>
+                      <button type="submit" class="btn btn-auth-primary px-5 py-2 w-100">
+                        {{ __('SEND RESET LINK') }}
+                      </button>
                     </div>
+                  </form>
+
+                  <div class="text-center mt-4">
+                    <a href="{{ route('login') }}" class="text-decoration-none small text-muted hover-coral">
+                      <i class="bi bi-arrow-left me-1"></i> Back to Login
+                    </a>
+                  </div>
                 </div>
+              </div>
+
+              <!-- Right: Overlay side -->
+              <div class="col-md-5 auth-overlay d-flex align-items-center justify-content-center text-center p-4 p-lg-5">
+                <div class="overlay-panel">
+                  <h2 class="fw-bold text-white mb-3">Recover Access!</h2>
+                  <p class="text-white-50">Locked out? Don't worry. We'll help you get back to your account in no time.</p>
+                </div>
+              </div>
             </div>
+          </div>
         </div>
+      </div>
     </div>
+</div>
 @endsection
