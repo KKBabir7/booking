@@ -7,13 +7,25 @@
 <style>
     .auth-section { margin-top: 0px; }
     .auth-input-group { position: relative; margin-bottom: 20px; }
-    .auth-input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #adb5bd; }
+    .auth-input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #adb5bd; z-index: 10; }
     .auth-input { padding-left: 45px !important; border-radius: 10px !important; height: 50px; border: 1px solid #eee; }
-    .auth-input:focus { border-color: #f76156; box-shadow: 0 0 0 0.25 anonymous rgba(247, 97, 86, 0.1); }
+    .auth-input:focus { border-color: #f76156; box-shadow: 0 0 0 0.25rem rgba(247, 97, 86, 0.1); }
+    .auth-input.is-invalid { border-color: #dc3545 !important; }
+    .auth-input.is-invalid:focus { box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.1) !important; }
+    .email-feedback { font-size: 0.75rem; color: #dc3545; display: none; margin-top: 4px; padding-left: 15px; }
     .btn-auth-primary { background: #f76156; border: none; color: white; border-radius: 50px; font-weight: 600; transition: all 0.3s; }
     .btn-auth-primary:hover { background: #e54b40; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(247, 97, 86, 0.3); color: white; }
     .custom-check:checked { background-color: #f76156; border-color: #f76156; }
+    
+    /* International Phone Input Styles */
+    .iti { width: 100%; }
+    .iti__flag-container { padding-left: 10px; }
+    .iti__selected-flag { background: transparent !important; }
+    .iti--allow-dropdown .iti__flag-container:hover .iti__selected-flag { background: rgba(0,0,0,0.05) !important; }
+    .iti input { padding-left: 60px !important; }
+    .iti__country-list, .iti--inline-dropdown .iti__dropdown-content { z-index: 12 !important; background-color: white !important; }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@21.0.8/build/css/intlTelInput.css">
 @endpush
 
 @section('content')
@@ -28,13 +40,7 @@
                 <div class="auth-box">
                   <h2 class="auth-title mb-4 text-center fw-bold" style="color: #2d3436;">Sign Up</h2>
                   
-                  <div class="social-auth-icons mb-4 text-center">
-                    <a href="#" class="social-icon d-inline-flex align-items-center justify-content-center rounded-circle border me-2" style="width: 40px; height: 40px; color: #3b5998;"><i class="fa fa-facebook"></i></a>
-                    <a href="#" class="social-icon d-inline-flex align-items-center justify-content-center rounded-circle border me-2" style="width: 40px; height: 40px; color: #db4437;"><i class="bi bi-google"></i></a>
-                    <a href="#" class="social-icon d-inline-flex align-items-center justify-content-center rounded-circle border" style="width: 40px; height: 40px; color: #0077b5;"><i class="bi bi-linkedin"></i></a>
-                  </div>
-                  
-                  <p class="text-center text-muted small mb-4">or use your email for registration</p>
+                  <div class="mb-4"></div>
 
                   <form method="POST" action="{{ route('register') }}">
                     @csrf
@@ -45,12 +51,13 @@
                     </div>
                     <div class="auth-input-group">
                       <i class="bi bi-envelope auth-input-icon"></i>
-                      <input type="email" name="email" class="form-control auth-input" placeholder="Email" value="{{ old('email') }}" required>
+                      <input type="email" name="email" id="user_email" class="form-control auth-input" placeholder="Email" value="{{ old('email') }}" required>
+                      <div class="email-feedback" id="email_error">Please enter a valid email address (e.g., name@example.com)</div>
                       <x-input-error :messages="$errors->get('email')" class="mt-2" />
                     </div>
                     <div class="auth-input-group">
-                      <i class="bi bi-telephone auth-input-icon"></i>
-                      <input type="tel" name="phone" class="form-control auth-input" placeholder="Phone" value="{{ old('phone') }}" required>
+                      <input type="tel" id="user_phone" name="phone_input" class="form-control auth-input" style="padding-left: 60px !important;" placeholder="Phone" value="{{ old('phone') }}" required>
+                      <input type="hidden" name="phone" id="full_phone">
                       <x-input-error :messages="$errors->get('phone')" class="mt-2" />
                     </div>
                     <div class="auth-input-group">
@@ -98,3 +105,68 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@21.0.8/build/js/intlTelInput.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const phoneInput = document.querySelector("#user_phone");
+        const fullPhoneHidden = document.querySelector("#full_phone");
+        
+        const iti = window.intlTelInput(phoneInput, {
+            utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@21.0.8/build/js/utils.js",
+            initialCountry: "bd",
+            separateDialCode: true,
+            preferredCountries: ["bd", "us", "gb", "sa", "ae"],
+        });
+
+        // Set initial value if exists
+        if (phoneInput.value) {
+            fullPhoneHidden.value = iti.getNumber();
+        }
+
+        const handleChange = () => {
+            if (iti.isValidNumber()) {
+                fullPhoneHidden.value = iti.getNumber();
+            } else {
+                fullPhoneHidden.value = phoneInput.value;
+            }
+        };
+
+        phoneInput.addEventListener('change', handleChange);
+        phoneInput.addEventListener('keyup', handleChange);
+        
+        // Final update on submit
+        phoneInput.closest('form').addEventListener('submit', function() {
+            fullPhoneHidden.value = iti.getNumber();
+        });
+
+        // Email Validation Logic
+        const emailInput = document.querySelector("#user_email");
+        const emailError = document.querySelector("#email_error");
+        
+        const validateEmail = (email) => {
+            return String(email)
+                .toLowerCase()
+                .match(
+                    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+                );
+        };
+
+        emailInput.addEventListener('input', function() {
+            if (this.value.length > 0) {
+                if (!validateEmail(this.value)) {
+                    this.classList.add('is-invalid');
+                    emailError.style.display = 'block';
+                } else {
+                    this.classList.remove('is-invalid');
+                    emailError.style.display = 'none';
+                }
+            } else {
+                this.classList.remove('is-invalid');
+                emailError.style.display = 'none';
+            }
+        });
+    });
+</script>
+@endpush
