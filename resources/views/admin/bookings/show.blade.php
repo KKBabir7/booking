@@ -135,12 +135,16 @@
                         </div>
                         <div>
                             <div class="text-[9px] font-black text-white/60 uppercase tracking-widest">Billing Summary Table 
-                                <span class="ms-2 badge {{ ($booking->amount_paid >= $booking->total_price) ? 'bg-white text-emerald-600' : 'bg-rose-500 text-white' }} p-1 rounded uppercase" style="font-size: 8px;">
-                                    {{ ($booking->amount_paid >= $booking->total_price) ? 'CLEARED' : 'PENDING' }}
+                                @php
+                                    $isCleared = ($booking->amount_paid >= $booking->total_price && $booking->type !== 'restaurant') || 
+                                                ($booking->type === 'restaurant' && $booking->status === 'completed' && $booking->payment_status === 'success');
+                                @endphp
+                                <span id="badge-status" class="ms-2 badge {{ $isCleared ? 'bg-white text-emerald-600' : 'bg-rose-500 text-white' }} p-1 rounded uppercase" style="font-size: 8px;">
+                                    {{ $isCleared ? 'CLEARED' : 'PENDING' }}
                                 </span>
                             </div>
-                            <div class="text-[10px] font-bold uppercase tracking-tight">
-                                {{ ($booking->amount_paid >= $booking->total_price) ? 'Transaction Settled & Verified' : 'Awaiting Full Payment' }}
+                            <div class="text-[10px] font-bold uppercase tracking-tight" id="badge-sub-header">
+                                {{ $isCleared ? 'Transaction Settled & Verified' : 'Awaiting Full Payment' }}
                             </div>
                         </div>
                     </div>
@@ -582,19 +586,34 @@
 
             function updateDue(total, paid) {
                 const due = total - paid;
+                const isRestaurantPending = (bookingType === 'restaurant' && confirmFullBillInput && !confirmFullBillInput.checked);
 
-                if (due <= 0) {
+                const badgeStatus = document.getElementById('badge-status');
+
+                if (due <= 0 && !isRestaurantPending) {
                     valDueAmount.innerHTML = '<span class="text-emerald-200">CLEARED</span>';
                     labelDue.innerText = 'Status';
                     subLabelDue.innerText = 'Balance Fully Recovered';
                     billingBanner.classList.remove('bg-slate-900');
                     billingBanner.classList.add('bg-emerald-600');
+                    
+                    if (badgeStatus) {
+                        badgeStatus.innerText = 'CLEARED';
+                        badgeStatus.classList.remove('text-slate-600');
+                        badgeStatus.classList.add('text-emerald-600');
+                    }
                 } else {
                     valDueAmount.innerHTML = '<span class="text-rose-400">TK ' + Math.ceil(due).toLocaleString() + '</span>';
                     labelDue.innerText = 'Remaining Due';
-                    subLabelDue.innerText = 'Balance Payment Collection Required';
+                    subLabelDue.innerText = (isRestaurantPending && due <= 0) ? 'Final Billing Pending' : 'Balance Payment Collection Required';
                     billingBanner.classList.add('bg-slate-900');
                     billingBanner.classList.remove('bg-emerald-600');
+
+                    if (badgeStatus) {
+                        badgeStatus.innerText = 'PENDING';
+                        badgeStatus.classList.remove('text-emerald-600');
+                        badgeStatus.classList.add('text-slate-600');
+                    }
                 }
             }
 
