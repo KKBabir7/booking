@@ -5,7 +5,7 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/signup.css') }}" />
 <style>
-    .auth-section { margin-top: 100px; }
+    .auth-section { margin-top: 0px; }
     .auth-input-group { position: relative; margin-bottom: 20px; }
     .auth-input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #adb5bd; }
     .auth-input { padding-left: 45px !important; border-radius: 10px !important; height: 50px; border: 1px solid #eee; }
@@ -20,7 +20,7 @@
 <div class="auth-section">
     <div class="container">
       <div class="row min-vh-100 align-items-center justify-content-center py-5">
-        <div class="col-lg-10 col-xl-9">
+        <div class="col-lg-12 col-xl-12">
           <div class="auth-card shadow-lg border-0 overflow-hidden" style="border-radius: 20px;">
             <div class="row g-0">
               <!-- Left: Form side -->
