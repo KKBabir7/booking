@@ -246,9 +246,12 @@
                                 <h4 class="fw-black text-danger mb-0">{{ $currencyService->format($booking->total_price) }}</h4>
                                 <div class="d-flex flex-column align-items-md-end">
                                   <small class="text-muted fw-bold text-uppercase mt-1" style="font-size: 8px;">Advance paid:
-                                    {{ $currencyService->format(500) }}</small>
+                                    {{ $currencyService->format($booking->deposit_amount ?: 500) }}</small>
+                                  @php
+                                      $isCleared = ($booking->status === 'completed' && $booking->payment_status === 'success');
+                                  @endphp
                                   <small class="text-muted fw-bold text-uppercase" style="font-size: 9px;">Total Bill
-                                    ({{ $booking->amount_paid >= $booking->total_price ? 'Cleared' : 'Pending' }})</small>
+                                    ({{ $isCleared ? 'Cleared' : 'Pending' }})</small>
                                 </div>
                               @endif
                             </div>
