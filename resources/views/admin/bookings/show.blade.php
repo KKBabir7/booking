@@ -124,8 +124,12 @@
 
             <!-- Professional Invoice Style Billing -->
             <div class="card-premium p-0 overflow-hidden mt-6 shadow-xl border-0">
+                @php
+                    $isCleared = ($booking->amount_paid >= $booking->total_price && $booking->type !== 'restaurant') || 
+                                ($booking->type === 'restaurant' && $booking->status === 'completed' && $booking->payment_status === 'success');
+                @endphp
                 <div id="billing-banner"
-                    class="p-8 {{ ($booking->amount_paid >= $booking->total_price) ? 'bg-emerald-600' : 'bg-slate-900' }} text-white transition-all duration-700 relative">
+                    class="p-8 {{ $isCleared ? 'bg-emerald-600' : 'bg-slate-900' }} text-white transition-all duration-700 relative">
                     <div class="absolute -right-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
 
                     <!-- Title Row -->
@@ -135,10 +139,6 @@
                         </div>
                         <div>
                             <div class="text-[9px] font-black text-white/60 uppercase tracking-widest">Billing Summary Table 
-                                @php
-                                    $isCleared = ($booking->amount_paid >= $booking->total_price && $booking->type !== 'restaurant') || 
-                                                ($booking->type === 'restaurant' && $booking->status === 'completed' && $booking->payment_status === 'success');
-                                @endphp
                                 <span id="badge-status" class="ms-2 badge {{ $isCleared ? 'bg-white text-emerald-600' : 'bg-rose-500 text-white' }} p-1 rounded uppercase" style="font-size: 8px;">
                                     {{ $isCleared ? 'CLEARED' : 'PENDING' }}
                                 </span>
@@ -158,8 +158,9 @@
                                 {{ number_format($booking->total_price) }}</div>
                         </div>
                         <div class="px-4" style="border-right: 1px solid rgba(255,255,255,0.15);">
-                            <div class="text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">Advance Paid
-                                Amount</div>
+                            <div class="text-[10px] font-black text-white/50 uppercase tracking-widest mb-2" id="label-paid-amount">
+                                {{ ($booking->amount_paid >= $booking->total_price) ? 'Total Amount Paid' : 'Advance Paid Amount' }}
+                            </div>
                             <div class="text-3xl font-black tracking-tight" id="val-paid-amount">TK
                                 {{ number_format($booking->amount_paid) }}</div>
                         </div>
@@ -471,6 +472,7 @@
             // UI Elements for updates
             const valTotalPrice = document.getElementById('val-total-price');
             const valPaidAmount = document.getElementById('val-paid-amount');
+            const labelPaidAmount = document.getElementById('label-paid-amount');
             const valDueAmount = document.getElementById('val-due-amount');
             const labelDue = document.getElementById('label-due');
             const subLabelDue = document.getElementById('sub-label-due');
@@ -596,6 +598,7 @@
                     subLabelDue.innerText = 'Balance Fully Recovered';
                     billingBanner.classList.remove('bg-slate-900');
                     billingBanner.classList.add('bg-emerald-600');
+                    if (labelPaidAmount) labelPaidAmount.innerText = 'Total Amount Paid';
                     
                     if (badgeStatus) {
                         badgeStatus.innerText = 'CLEARED';
@@ -608,6 +611,7 @@
                     subLabelDue.innerText = (isRestaurantPending && due <= 0) ? 'Final Billing Pending' : 'Balance Payment Collection Required';
                     billingBanner.classList.add('bg-slate-900');
                     billingBanner.classList.remove('bg-emerald-600');
+                    if (labelPaidAmount) labelPaidAmount.innerText = 'Advance Paid Amount';
 
                     if (badgeStatus) {
                         badgeStatus.innerText = 'PENDING';
@@ -716,19 +720,7 @@
                 });
             }
 
-            // Initialize UI on load
-            const initialTotal = parseFloat(valTotalPrice.innerText.replace(/[^0-9]/g, ''));
-            updateDue(initialTotal, originalAmount);
-
-            // Initial status detection for restaurant partials
-            if (bookingType === 'restaurant' && originalPaymentStatus !== 'success') {
-                paymentStatusSelect.value = 'pending';
-                // Force uncheck for restaurants on load if not explicitly successful in DB
-                if (paymentCompleteCheckbox) paymentCompleteCheckbox.checked = false;
-                if (confirmFullBillInput) confirmFullBillInput.checked = false;
-            }
-
-            // Auto-check if already fully paid on load
+            // Checkbox and UI Initialization on load
             if (originalAmount >= initialTotal && paymentCompleteCheckbox && bookingType !== 'restaurant') {
                 paymentCompleteCheckbox.checked = true;
                 if (confirmFullBillInput) confirmFullBillInput.checked = true;
@@ -737,7 +729,16 @@
                 // Only auto-check restaurant if it was ALREADY settled in history
                 if (paymentCompleteCheckbox) paymentCompleteCheckbox.checked = true;
                 if (confirmFullBillInput) confirmFullBillInput.checked = true;
+                if (paymentCompleteCheckbox) paymentCompleteCheckbox.parentElement.classList.add('bg-emerald-100', 'border-emerald-300');
+            } else if (bookingType === 'restaurant' && originalPaymentStatus !== 'success') {
+                // Initial status detection for restaurant partials
+                paymentStatusSelect.value = 'pending';
+                if (paymentCompleteCheckbox) paymentCompleteCheckbox.checked = false;
+                if (confirmFullBillInput) confirmFullBillInput.checked = false;
             }
+
+            // Initialize UI Banner State AFTER checkboxes are set
+            updateDue(initialTotal, originalAmount);
         });
     </script>
 @endpush

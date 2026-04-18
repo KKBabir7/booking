@@ -115,10 +115,17 @@
                         <div class="flex flex-col items-end gap-1">
                             <div class="text-xs font-black text-slate-800">TK {{ number_format($booking->total_price) }}</div>
                             
-                            @if($booking->amount_paid >= $booking->total_price && $booking->status !== 'cancelled')
+                            @php
+                                $isFullySettled = ($booking->amount_paid >= $booking->total_price && $booking->type !== 'restaurant') || 
+                                                 ($booking->type === 'restaurant' && $booking->status === 'completed' && $booking->payment_status === 'success');
+                            @endphp
+
+                            @if($isFullySettled && $booking->status !== 'cancelled')
                                 <span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[9px] font-black rounded border border-emerald-100 uppercase tracking-tighter">Settled</span>
                             @elseif($booking->amount_paid > 0 && $booking->status !== 'cancelled')
-                                <div class="text-[9px] font-bold text-indigo-500 uppercase">{{ $booking->payment_percentage }}% Paid</div>
+                                <span class="px-2 py-0.5 {{ $booking->type === 'restaurant' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100' }} text-[9px] font-black rounded border uppercase tracking-tighter">
+                                    {{ $booking->type === 'restaurant' && !$isFullySettled ? 'Advance Pay' : ($booking->payment_percentage . '% Paid') }}
+                                </span>
                                 <div class="text-[9px] text-slate-400 font-medium">TK {{ number_format($booking->amount_paid) }}</div>
                             @endif
 

@@ -41,8 +41,7 @@ class BookingController extends Controller
 
         $bookings = $query->latest()->paginate(15);
 
-        // Mark all unread bookings as checked when viewing the list
-        Booking::where('is_checked', false)->update(['is_checked' => true]);
+        $bookings = $query->latest()->paginate(15);
 
         return view('admin.bookings.index', compact('bookings'));
     }
@@ -173,6 +172,11 @@ class BookingController extends Controller
      */
     public function show(Booking $booking)
     {
+        // Mark as read when explicitly viewed
+        if (!$booking->is_checked) {
+            $booking->update(['is_checked' => true]);
+        }
+
         $booking->load(['user', 'room', 'conferenceHall']);
         return view('admin.bookings.show', compact('booking'));
     }
