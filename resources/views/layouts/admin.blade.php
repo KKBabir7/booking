@@ -29,6 +29,7 @@
     <style>
         :root {
             --sidebar-width: 280px;
+            --sidebar-collapsed-width: 85px;
             --primary-color: #4f46e5;
             /* Indigo 600 */
             --sidebar-bg: #0f172a;
@@ -39,21 +40,33 @@
 
         body {
             background-color: var(--content-bg);
+            overflow-x: hidden;
         }
 
         .sidebar {
             width: var(--sidebar-width);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             background: var(--sidebar-bg);
             border-right: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 100;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
         }
 
         .main-content {
             margin-left: var(--sidebar-width);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             width: calc(100% - var(--sidebar-width));
+        }
+
+        .main-content.expanded {
+            margin-left: var(--sidebar-collapsed-width);
+            width: calc(100% - var(--sidebar-collapsed-width));
         }
 
         .sidebar-link {
@@ -110,6 +123,55 @@
             border: 1px solid #f1f5f9;
         }
 
+        /* Collapsed Sidebar Adjustments */
+        .sidebar.collapsed .sidebar-logo-text,
+        .sidebar.collapsed .sidebar-link span,
+        .sidebar.collapsed .sidebar-link .badge,
+        .sidebar.collapsed .sidebar-group i:last-child,
+        .sidebar.collapsed .sidebar-section-title,
+        .sidebar.collapsed .sidebar-link::after {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            position: absolute !important;
+            pointer-events: none !important;
+        }
+
+        .sidebar.collapsed .sidebar-link {
+            justify-content: center;
+            padding: 12px 0;
+            margin: 4px auto;
+            width: 50px;
+        }
+
+        .sidebar.collapsed .sidebar-link i {
+            margin-right: 0 !important;
+            font-size: 1.4rem;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .sidebar.collapsed .px-8 {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            display: flex;
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .logo-container {
+            margin-right: 0 !important;
+        }
+
+        .sidebar.collapsed .submenu {
+            display: none !important;
+        }
+
+        .sidebar.collapsed nav {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            overflow-x: hidden !important;
+        }
+
         @media (max-width: 1024px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -129,7 +191,11 @@
 
         /* Professional Sidebar Scrollbar */
         .custom-scrollbar::-webkit-scrollbar {
-            width: 5px;
+            width: 4px;
+        }
+        
+        #sidebar.collapsed.custom-scrollbar::-webkit-scrollbar {
+            width: 0px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
@@ -151,27 +217,31 @@
     <div class="flex">
         <!-- Sidebar -->
         <aside class="sidebar fixed h-full shadow-2xl flex flex-col pt-2" id="sidebar">
-            <div class="px-8 py-6 mb-4">
+            <div class="px-8 py-6 mb-4 flex items-center justify-between border-b border-slate-800/50">
                 <a href="{{ route('admin.dashboard') }}"
-                    class="text-2xl font-bold flex items-center gap-3 tracking-tight">
-                    <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                    class="flex items-center gap-3 tracking-tight overflow-hidden">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shrink-0 logo-container">
                         <i class="bi bi-hospital text-white text-xl"></i>
                     </div>
-                    <span class="text-white">NGH <span class="text-indigo-400">ADMIN</span></span>
+                    <span class="text-white sidebar-logo-text whitespace-nowrap font-bold text-xl">NGH <span class="text-indigo-400">ADMIN</span></span>
                 </a>
+                <button class="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0" 
+                        onclick="toggleSidebarDesktop()" title="Toggle Sidebar">
+                    <i class="bi bi-list text-xl"></i>
+                </button>
             </div>
 
             <nav class="flex-grow overflow-y-auto px-1 custom-scrollbar">
-                <div class="px-6 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Main Menu</div>
+                <div class="px-6 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider sidebar-section-title">Main Menu</div>
 
                 <a href="{{ route('admin.dashboard') }}"
                     class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                    <i class="bi bi-grid-1x2-fill"></i> <span>Dashboard</span>
                 </a>
 
                 <a href="{{ route('admin.navbar.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.navbar.*') ? 'active' : '' }}">
-                    <i class="bi bi-compass-fill"></i> Navbar
+                    <i class="bi bi-compass-fill"></i> <span>Navbar</span>
                 </a>
 
                 <div class="sidebar-group">
@@ -208,51 +278,51 @@
 
                 <a href="{{ route('admin.rooms.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.rooms.*') ? 'active' : '' }}">
-                    <i class="bi bi-door-open-fill"></i> Rooms
+                    <i class="bi bi-door-open-fill"></i> <span>Rooms</span>
                 </a>
 
                 <a href="{{ route('admin.conference.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.conference.*') ? 'active' : '' }}">
-                    <i class="bi bi-building text-xl"></i> Conference Halls
+                    <i class="bi bi-building text-xl"></i> <span>Conference Halls</span>
                 </a>
 
                 <a href="{{ route('admin.page.edit', 'restaurant') }}"
                     class="sidebar-link {{ request()->is('admin/page/restaurant') ? 'active' : '' }}">
-                    <i class="bi bi-egg-fried"></i> Restaurant
+                    <i class="bi bi-egg-fried"></i> <span>Restaurant</span>
                 </a>
 
                 <a href="{{ route('admin.page.contact_information.edit') }}"
                     class="sidebar-link {{ request()->routeIs('admin.page.contact_information.*') ? 'active' : '' }}">
-                    <i class="bi bi-telephone-outbound"></i> Contact Info
+                    <i class="bi bi-telephone-outbound"></i> <span>Contact Info</span>
                 </a>
 
                 <a href="{{ route('admin.page.about.edit') }}"
                     class="sidebar-link {{ request()->routeIs('admin.page.about.*') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-person"></i> About Page
+                    <i class="bi bi-file-earmark-person"></i> <span>About Page</span>
                 </a>
 
                 <a href="{{ route('admin.page.privacy.edit') }}"
                     class="sidebar-link {{ request()->routeIs('admin.page.privacy.*') ? 'active' : '' }}">
-                    <i class="bi bi-shield-lock"></i> Privacy Policy
+                    <i class="bi bi-shield-lock"></i> <span>Privacy Policy</span>
                 </a>
 
                 <a href="{{ route('admin.page.terms.edit') }}"
                     class="sidebar-link {{ request()->routeIs('admin.page.terms.*') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-text"></i> Terms of Service
+                    <i class="bi bi-file-earmark-text"></i> <span>Terms of Service</span>
                 </a>
 
                 <a href="{{ route('admin.page.faq.edit') }}"
                     class="sidebar-link {{ request()->routeIs('admin.page.faq.*') ? 'active' : '' }}">
-                    <i class="bi bi-question-circle"></i> FAQ Page
+                    <i class="bi bi-question-circle"></i> <span>FAQ Page</span>
                 </a>
 
-                <div class="px-6 mt-6 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Operations
+                <div class="px-6 mt-6 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider sidebar-section-title">Operations
                 </div>
 
                 <a href="{{ route('admin.bookings.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.bookings.*') ? 'active' : '' }} flex items-center justify-between">
                     <div class="flex items-center">
-                        <i class="bi bi-calendar-check-fill"></i> Bookings
+                        <i class="bi bi-calendar-check-fill"></i> <span>Bookings</span>
                     </div>
                     @if($unreadBookingsCount > 0)
                         <span id="nav-bookings-count"
@@ -269,7 +339,7 @@
                 <a href="{{ route('admin.contacts.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }} flex items-center justify-between">
                     <div class="flex items-center">
-                        <i class="bi bi-envelope-fill"></i> Contact
+                        <i class="bi bi-envelope-fill"></i> <span>Contact</span>
                     </div>
                     @if($unreadContactsCount > 0)
                         <span id="nav-contacts-count"
@@ -286,7 +356,7 @@
                 <a href="{{ route('admin.reviews.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.reviews.*') ? 'active' : '' }} flex items-center justify-between">
                     <div class="flex items-center">
-                        <i class="bi bi-star-fill"></i> Reviews
+                        <i class="bi bi-star-fill"></i> <span>Reviews</span>
                     </div>
                     @if($unreadReviewsCount > 0)
                         <span id="nav-reviews-count"
@@ -303,19 +373,19 @@
                 <!-- SEO Menu -->
                 <a href="{{ route('admin.seo.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.seo.*') ? 'active' : '' }}">
-                    <i class="bi bi-search"></i> SEO
+                    <i class="bi bi-search"></i> <span>SEO</span>
                 </a>
 
                 <!-- Currencies Menu -->
                 <a href="{{ route('admin.currencies.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.currencies.*') ? 'active' : '' }}">
-                    <i class="bi bi-currency-exchange"></i> Currencies
+                    <i class="bi bi-currency-exchange"></i> <span>Currencies</span>
                 </a>
 
                 <a href="{{ route('admin.users.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }} flex items-center justify-between">
                     <div class="flex items-center">
-                        <i class="bi bi-people-fill"></i> Users
+                        <i class="bi bi-people-fill"></i> <span>Users</span>
                     </div>
                     @if($unreadUsersCount > 0)
                         <span id="nav-users-count"
@@ -330,21 +400,21 @@
                 </a>
 
                 @if(auth()->user()->isSuperAdmin())
-                    <div class="px-6 mt-6 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">System Settings</div>
+                    <div class="px-6 mt-6 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider sidebar-section-title">System Settings</div>
                     
                     <a href="{{ route('admin.payment-settings.index') }}"
                         class="sidebar-link {{ request()->routeIs('admin.payment-settings.*') ? 'active' : '' }}">
-                        <i class="bi bi-credit-card-fill"></i> Payment Settings
-                    </a>
-
-                    <a href="{{ route('admin.admin-user.index') }}"
-                        class="sidebar-link {{ request()->routeIs('admin.admin-user.*') ? 'active' : '' }}">
-                        <i class="bi bi-shield-lock-fill"></i> Admin User
+                        <i class="bi bi-credit-card-fill"></i> <span>Payment Settings</span>
                     </a>
 
                     <a href="{{ route('admin.email-settings.index') }}"
                         class="sidebar-link {{ request()->routeIs('admin.email-settings.*') ? 'active' : '' }}">
-                        <i class="bi bi-envelope-at-fill"></i> Email Setting
+                        <i class="bi bi-envelope-at-fill"></i> <span>Email Setting</span>
+                    </a>
+
+                    <a href="{{ route('admin.admin-user.index') }}"
+                        class="sidebar-link {{ request()->routeIs('admin.admin-user.*') ? 'active' : '' }}">
+                        <i class="bi bi-shield-lock-fill"></i> <span>Admin User</span>
                     </a>
                 @endif
             </nav>
@@ -354,7 +424,7 @@
                     @csrf
                     <button type="submit"
                         class="sidebar-link w-full text-left text-rose-400 hover:bg-rose-500/10 hover:text-rose-300">
-                        <i class="bi bi-power"></i> Logout
+                        <i class="bi bi-power"></i> <span>Logout</span>
                     </button>
                 </form>
             </div>
@@ -463,6 +533,19 @@
 
     <script>
         function toggleSubmenu(id) {
+            const sidebar = document.getElementById('sidebar');
+            
+            // Auto expand if collapsed
+            if (sidebar.classList.contains('collapsed')) {
+                toggleSidebarDesktop();
+                // Wait for animation
+                setTimeout(() => openSub(id), 200);
+            } else {
+                openSub(id);
+            }
+        }
+
+        function openSub(id) {
             const sub = document.getElementById(id);
             const chevron = document.getElementById(id.replace('-sub', '-chevron'));
             sub.classList.toggle('hidden');
@@ -472,8 +555,28 @@
         }
 
         function toggleSidebar() {
+            // Mobile toggle
             document.getElementById('sidebar').classList.toggle('active');
         }
+
+        function toggleSidebarDesktop() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            
+            // Save state to local storage
+            localStorage.setItem('sidebar-collapsed', sidebar.classList.contains('collapsed'));
+        }
+
+        // Restore sidebar state on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+            if (isCollapsed && window.innerWidth > 1024) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.querySelector('.main-content').classList.add('expanded');
+            }
+        });
     </script>
 
     <!-- jQuery and Select2 JS -->
