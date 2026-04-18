@@ -214,33 +214,43 @@
                               </span>
 
                               @if($booking->type !== 'restaurant')
-                                @if($booking->payment_percentage && $booking->payment_percentage < 100)
-                                  <!-- Partial Payment Display -->
-                                  <h4 class="fw-black text-danger mb-0">{{ $currencyService->format($booking->amount_paid) }}</h4>
-                                  <div class="d-flex flex-column align-items-md-end">
-                                    <small class="text-muted fw-bold text-uppercase" style="font-size: 9px;">Amount Paid
-                                      ({{ $booking->payment_percentage }}%)</small>
-                                    <div class="mt-1">
-                                      <span class="badge bg-light text-dark border small fw-medium" style="font-size: 10px;">
-                                        Total: {{ $currencyService->format($booking->total_price) }}
-                                      </span>
-                                      <span class="badge bg-danger-subtle text-danger border border-danger-subtle small fw-medium"
-                                        style="font-size: 10px;">
-                                        Due: {{ $currencyService->format($booking->total_price - $booking->amount_paid) }}
-                                      </span>
+                                  @php
+                                    $isFullyPaid = $booking->amount_paid >= $booking->total_price && $booking->total_price > 0;
+                                  @endphp
+
+                                  @if(!$isFullyPaid && $booking->payment_percentage && $booking->payment_percentage < 100)
+                                    <!-- Partial Payment Display -->
+                                    <h4 class="fw-black text-danger mb-0">{{ $currencyService->format($booking->amount_paid) }}</h4>
+                                    <div class="d-flex flex-column align-items-md-end">
+                                      <small class="text-muted fw-bold text-uppercase" style="font-size: 9px;">Amount Paid
+                                        ({{ $booking->payment_percentage }}%)</small>
+                                      <div class="mt-1">
+                                        <span class="badge bg-light text-dark border small fw-medium" style="font-size: 10px;">
+                                          Total: {{ $currencyService->format($booking->total_price) }}
+                                        </span>
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle small fw-medium"
+                                          style="font-size: 10px;">
+                                          Due: {{ $currencyService->format($booking->total_price - $booking->amount_paid) }}
+                                        </span>
+                                      </div>
                                     </div>
-                                  </div>
-                                @else
-                                  <!-- Full Payment or Quote Display -->
-                                  <h4 class="fw-black text-danger mb-0">{{ $currencyService->format($booking->total_price) }}</h4>
-                                  @if($booking->total_price > 0)
-                                    <small class="text-muted fw-bold text-uppercase"
-                                      style="font-size: 9px;">{{ $booking->type === 'conference' ? 'Hall Price / Session' : 'Total Amount' }}</small>
                                   @else
-                                    <small class="text-success fw-bold text-uppercase"
-                                      style="font-size: 9px;">{{ $booking->type === 'conference' ? 'Pending Quote' : 'Reservation Only' }}</small>
+                                    <!-- Full Payment or Quote Display -->
+                                    <h4 class="fw-black text-danger mb-0">{{ $currencyService->format($booking->total_price) }}</h4>
+                                    <div class="d-flex flex-column align-items-md-end">
+                                      @if($isFullyPaid)
+                                        <small class="text-success fw-bold text-uppercase mt-1" style="font-size: 8px;">
+                                          <i class="bi bi-check-circle-fill me-1"></i>Total Bill (Cleared)
+                                        </small>
+                                      @elseif($booking->total_price > 0)
+                                        <small class="text-muted fw-bold text-uppercase"
+                                          style="font-size: 9px;">{{ $booking->type === 'conference' ? 'Hall Price / Session' : 'Total Amount' }}</small>
+                                      @else
+                                        <small class="text-success fw-bold text-uppercase"
+                                          style="font-size: 9px;">{{ $booking->type === 'conference' ? 'Pending Quote' : 'Reservation Only' }}</small>
+                                      @endif
+                                    </div>
                                   @endif
-                                @endif
                               @else
                                 <!-- Restaurant Dynamic Pricing Display -->
                                 <h4 class="fw-black text-danger mb-0">{{ $currencyService->format($booking->total_price) }}</h4>
