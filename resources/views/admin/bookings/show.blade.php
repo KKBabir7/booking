@@ -334,9 +334,9 @@
                                 <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Food Bill / Additional Amount (TK)</label>
                                 <div class="relative mb-4">
                                     <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">TK</span>
-                                    <input type="number" name="food_bill" value="{{ $booking->total_price - 500 }}"
+                                    <input type="number" name="food_bill" value="{{ max(0, $booking->total_price - ($booking->deposit_amount ?: 500)) }}"
                                         class="w-full pl-10 pr-4 py-3 bg-rose-50 border border-rose-100 rounded-2xl text-sm font-black text-rose-700 transition focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-300" placeholder="Enter amount for food/items">
-                                    <div class="text-[9px] text-rose-400 font-bold uppercase mt-2 italic px-1">Note: Total Bill will be 500 (Booking) + this amount</div>
+                                    <div class="text-[9px] text-rose-400 font-bold uppercase mt-2 italic px-1">Note: Total Bill will be <span id="dynamic-deposit-note">{{ $booking->deposit_amount ?: 500 }}</span> (Booking) + this amount</div>
                                 </div>
                                 <div class="flex items-center gap-2 mb-6 px-1">
                                     <input type="checkbox" name="confirm_full_payment" value="1" id="confirm_full_payment" 
@@ -475,6 +475,7 @@
 
             const roomPrice = {{ $booking->room->price ?? 0 }};
             const bookingType = '{{ $booking->type }}';
+            const depositAmount = {{ $booking->deposit_amount ?: 500 }};
 
             // Store Original State for Revert Logic
             const originalAmount = {{ $booking->amount_paid ?? 0 }};
@@ -507,7 +508,7 @@
             if (foodBillInput && bookingType === 'restaurant') {
                 foodBillInput.addEventListener('input', function() {
                     const bill = parseFloat(this.value) || 0;
-                    const total = 500 + bill; // Base 500 + Food Bill
+                    const total = depositAmount + bill; // Dynamic Deposit + Food Bill
                     valTotalPrice.innerText = 'TK ' + total.toLocaleString();
                     
                     const paid = parseFloat(amountPaidInput.value) || 0;
@@ -519,7 +520,7 @@
             if (confirmFullBillInput && foodBillInput) {
                 confirmFullBillInput.addEventListener('change', function() {
                     const bill = parseFloat(foodBillInput.value) || 0;
-                    const total = 500 + bill;
+                    const total = depositAmount + bill;
                     
                     if (this.checked) {
                         amountPaidInput.value = total;
@@ -703,13 +704,20 @@
             // Initial status detection for restaurant partials
             if (bookingType === 'restaurant' && originalPaymentStatus !== 'success') {
                 paymentStatusSelect.value = 'pending';
+                // Force uncheck for restaurants on load if not explicitly successful in DB
+                if (paymentCompleteCheckbox) paymentCompleteCheckbox.checked = false;
+                if (confirmFullBillInput) confirmFullBillInput.checked = false;
             }
 
             // Auto-check if already fully paid on load
-            if (originalAmount >= initialTotal && paymentCompleteCheckbox) {
+            if (originalAmount >= initialTotal && paymentCompleteCheckbox && bookingType !== 'restaurant') {
                 paymentCompleteCheckbox.checked = true;
                 if (confirmFullBillInput) confirmFullBillInput.checked = true;
                 paymentCompleteCheckbox.parentElement.classList.add('bg-emerald-100', 'border-emerald-300');
+            } else if (bookingType === 'restaurant' && originalStatus === 'completed' && originalPaymentStatus === 'success') {
+                // Only auto-check restaurant if it was ALREADY settled in history
+                if (paymentCompleteCheckbox) paymentCompleteCheckbox.checked = true;
+                if (confirmFullBillInput) confirmFullBillInput.checked = true;
             }
         });
     </script>
