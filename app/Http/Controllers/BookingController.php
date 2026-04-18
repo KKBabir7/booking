@@ -188,16 +188,27 @@ class BookingController extends Controller
             'guests' => 'required|integer|min:1',
         ]);
 
-        // Conflict check
+        // Enhanced Conflict check to handle range bookings
+        $targetDate = $request->date;
         $conflict = Booking::active()
             ->where('type', 'conference')
             ->where('hall_id', $request->hall_id)
-            ->where('date', $request->date)
-            ->where('duration', $request->duration) // For simplicity, check exact duration matches first
+            ->where(function($q) use ($targetDate) {
+                $q->where(function($sq) use ($targetDate) {
+                    // Check against multi-day bookings (Range)
+                    $sq->whereNotNull('check_in')
+                       ->where('check_in', '<=', $targetDate)
+                       ->where('check_out', '>=', $targetDate);
+                })->orWhere(function($sq) use ($targetDate) {
+                    // Check against single-day legacy bookings
+                    $sq->whereNull('check_in')
+                       ->where('date', $targetDate);
+                });
+            })
             ->exists();
 
         if ($conflict) {
-            return back()->withErrors(['date' => 'The hall is already booked for this duration on the selected date.']);
+            return back()->withErrors(['date' => 'Security Alert: This hall is already reserved for corporate events on the selected date. Please choose another date or hall.']);
         }
 
         $hall = \App\Models\ConferenceHall::find($request->hall_id);

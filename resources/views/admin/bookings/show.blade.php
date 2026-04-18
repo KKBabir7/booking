@@ -99,8 +99,12 @@
                                         @if($booking->type === 'room')
                                             {{ Carbon\Carbon::parse($booking->check_in)->format('d M') }} &rarr;
                                             {{ Carbon\Carbon::parse($booking->check_out)->format('d M, Y') }}
+                                        @elseif($booking->type === 'conference' && $booking->check_in && $booking->check_out)
+                                            {{ Carbon\Carbon::parse($booking->check_in)->format('d M') }} &rarr;
+                                            {{ Carbon\Carbon::parse($booking->check_out)->format('d M, Y') }} &bull;
+                                            {{ $booking->time_slot ?? $booking->duration }}
                                         @else
-                                            {{ Carbon\Carbon::parse($booking->date)->format('d M Y') }} &bull;
+                                            {{ Carbon\Carbon::parse($booking->date ?? ($booking->check_in ?? now()))->format('d M Y') }} &bull;
                                             {{ $booking->time_slot ?? $booking->duration }}
                                         @endif
                                     </div>
