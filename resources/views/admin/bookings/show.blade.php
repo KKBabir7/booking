@@ -459,6 +459,10 @@
             const paymentCompleteCheckbox = document.getElementById('payment_full_complete');
             const bookingStatusSelect = document.getElementById('booking_status_select');
             const paymentStatusSelect = document.getElementById('payment_status_select');
+            
+            // Restaurant Specific
+            const foodBillInput = document.querySelector('input[name="food_bill"]');
+            const confirmFullBillInput = document.getElementById('confirm_full_payment');
 
             // UI Elements for updates
             const valTotalPrice = document.getElementById('val-total-price');
@@ -470,6 +474,7 @@
             const daysIndicator = document.getElementById('days-indicator');
 
             const roomPrice = {{ $booking->room->price ?? 0 }};
+            const bookingType = '{{ $booking->type }}';
 
             // Store Original State for Revert Logic
             const originalAmount = {{ $booking->amount_paid ?? 0 }};
@@ -487,6 +492,7 @@
                     // Interaction: If amount becomes less than total, uncheck full payment if it was checked
                     if (typedAmount < currentTotal && paymentCompleteCheckbox && paymentCompleteCheckbox.checked) {
                         paymentCompleteCheckbox.checked = false;
+                        if (confirmFullBillInput) confirmFullBillInput.checked = false;
                         paymentCompleteCheckbox.parentElement.classList.remove('bg-emerald-100', 'border-emerald-300');
 
                         // Also update Capture Status to Pending if it's currently success
@@ -497,8 +503,55 @@
                 });
             }
 
+            // Restaurant Real-time Calculation
+            if (foodBillInput && bookingType === 'restaurant') {
+                foodBillInput.addEventListener('input', function() {
+                    const bill = parseFloat(this.value) || 0;
+                    const total = 500 + bill; // Base 500 + Food Bill
+                    valTotalPrice.innerText = 'TK ' + total.toLocaleString();
+                    
+                    const paid = parseFloat(amountPaidInput.value) || 0;
+                    updateDue(total, paid);
+                });
+            }
+
+            // Restaurant "Confirm Full Payment Received" (The one in the red section)
+            if (confirmFullBillInput && foodBillInput) {
+                confirmFullBillInput.addEventListener('change', function() {
+                    const bill = parseFloat(foodBillInput.value) || 0;
+                    const total = 500 + bill;
+                    
+                    if (this.checked) {
+                        amountPaidInput.value = total;
+                        paymentStatusSelect.value = 'success';
+                        bookingStatusSelect.value = 'completed';
+                        
+                        // Sync with the bottom checkbox
+                        if (paymentCompleteCheckbox) {
+                            paymentCompleteCheckbox.checked = true;
+                            paymentCompleteCheckbox.parentElement.classList.add('bg-emerald-100', 'border-emerald-300');
+                        }
+                        
+                        updateDue(total, total);
+                    } else {
+                        // Revert to partial state
+                        amountPaidInput.value = originalAmount;
+                        paymentStatusSelect.value = originalPaymentStatus;
+                        bookingStatusSelect.value = originalStatus;
+                        
+                        if (paymentCompleteCheckbox) {
+                            const isPaid = (originalAmount >= total);
+                            paymentCompleteCheckbox.checked = isPaid;
+                            if (!isPaid) paymentCompleteCheckbox.parentElement.classList.remove('bg-emerald-100', 'border-emerald-300');
+                        }
+                        
+                        updateDue(total, originalAmount);
+                    }
+                });
+            }
+
             function recalculate() {
-                if (!checkInInput || !checkOutInput || !roomPrice) return;
+                if (!checkInInput || !checkOutInput || !roomPrice || bookingType === 'restaurant') return;
 
                 const checkIn = new Date(checkInInput.value);
                 const checkOut = new Date(checkOutInput.value);
@@ -536,7 +589,7 @@
                     billingBanner.classList.remove('bg-slate-900');
                     billingBanner.classList.add('bg-emerald-600');
                 } else {
-                    valDueAmount.innerHTML = '<span class="text-rose-400">TK ' + due.toLocaleString() + '</span>';
+                    valDueAmount.innerHTML = '<span class="text-rose-400">TK ' + Math.ceil(due).toLocaleString() + '</span>';
                     labelDue.innerText = 'Remaining Due';
                     subLabelDue.innerText = 'Balance Payment Collection Required';
                     billingBanner.classList.add('bg-slate-900');
@@ -551,20 +604,19 @@
             if (bookingStatusSelect) {
                 bookingStatusSelect.addEventListener('change', function () {
                     if (this.value === 'cancelled') {
-                        if (paymentCompleteCheckbox.checked) {
-                            paymentCompleteCheckbox.checked = false;
-                            paymentCompleteCheckbox.dispatchEvent(new Event('change'));
-                        }
+                        if (paymentCompleteCheckbox) paymentCompleteCheckbox.checked = false;
+                        if (confirmFullBillInput) confirmFullBillInput.checked = false;
+                        if (paymentCompleteCheckbox) paymentCompleteCheckbox.dispatchEvent(new Event('change'));
                         paymentStatusSelect.value = 'failed';
                     } else if (this.value === 'completed') {
                         // Automation: If service is completed, assume full payment
-                        if (!paymentCompleteCheckbox.checked) {
+                        if (paymentCompleteCheckbox && !paymentCompleteCheckbox.checked) {
                             paymentCompleteCheckbox.checked = true;
                             paymentCompleteCheckbox.dispatchEvent(new Event('change'));
                         }
                     } else if (this.value === 'pending' || this.value === 'confirmed') {
                         // Automation: If moved back to pending/confirmed, revert payment if it was checked
-                        if (paymentCompleteCheckbox.checked) {
+                        if (paymentCompleteCheckbox && paymentCompleteCheckbox.checked) {
                             paymentCompleteCheckbox.checked = false;
                             paymentCompleteCheckbox.dispatchEvent(new Event('change'));
                         }
@@ -575,11 +627,13 @@
             // Bi-directional Logic: If Capture Status is manually changed
             if (paymentStatusSelect) {
                 paymentStatusSelect.addEventListener('change', function () {
-                    if (this.value === 'success' && !paymentCompleteCheckbox.checked) {
+                    if (this.value === 'success' && paymentCompleteCheckbox && !paymentCompleteCheckbox.checked) {
                         paymentCompleteCheckbox.checked = true;
+                        if (confirmFullBillInput) confirmFullBillInput.checked = true;
                         paymentCompleteCheckbox.dispatchEvent(new Event('change'));
-                    } else if ((this.value === 'pending' || this.value === 'failed') && paymentCompleteCheckbox.checked) {
+                    } else if ((this.value === 'pending' || this.value === 'failed') && paymentCompleteCheckbox && paymentCompleteCheckbox.checked) {
                         paymentCompleteCheckbox.checked = false;
+                        if (confirmFullBillInput) confirmFullBillInput.checked = false;
                         paymentCompleteCheckbox.dispatchEvent(new Event('change'));
                     }
                 });
@@ -646,9 +700,15 @@
             const initialTotal = parseFloat(valTotalPrice.innerText.replace(/[^0-9]/g, ''));
             updateDue(initialTotal, originalAmount);
 
+            // Initial status detection for restaurant partials
+            if (bookingType === 'restaurant' && originalPaymentStatus !== 'success') {
+                paymentStatusSelect.value = 'pending';
+            }
+
             // Auto-check if already fully paid on load
-            if (originalAmount >= initialTotal && !paymentCompleteCheckbox.checked) {
+            if (originalAmount >= initialTotal && paymentCompleteCheckbox) {
                 paymentCompleteCheckbox.checked = true;
+                if (confirmFullBillInput) confirmFullBillInput.checked = true;
                 paymentCompleteCheckbox.parentElement.classList.add('bg-emerald-100', 'border-emerald-300');
             }
         });

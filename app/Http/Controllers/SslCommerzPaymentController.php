@@ -32,7 +32,7 @@ class SslCommerzPaymentController extends Controller
             // In a real scenario, you'd validate the amount and currency via SslCommerz API
             if ($this->sslService->validatePayment($request)) {
                 $booking->update([
-                    'payment_status' => 'success',
+                    'payment_status' => ($booking->type === 'restaurant') ? 'pending' : 'success',
                     'status' => ($booking->status === 'payment_pending') ? 'pending' : $booking->status,
                     'deposit_amount' => $amount, // Store initial payment as permanent deposit
                     'amount_paid' => $amount
@@ -60,7 +60,7 @@ class SslCommerzPaymentController extends Controller
     {
         $booking = Booking::where('transaction_id', $tran_id)
             ->where('user_id', Auth::id())
-            ->where('payment_status', 'success')
+            ->whereIn('payment_status', ['success', 'pending'])
             ->firstOrFail();
 
         return view('payments.success', compact('booking'));
@@ -109,7 +109,7 @@ class SslCommerzPaymentController extends Controller
         if ($booking && $booking->payment_status !== 'success') {
             if ($this->sslService->validatePayment($request)) {
                 $booking->update([
-                    'payment_status' => 'success',
+                    'payment_status' => ($booking->type === 'restaurant') ? 'pending' : 'success',
                     'deposit_amount' => $request->input('amount'),
                     'amount_paid' => $request->input('amount')
                 ]);
