@@ -1,6 +1,7 @@
 @extends('layouts.main')
 
 @section('content')
+@section('content')
   <!-- Hero Section -->
   <section class="hero-section position-relative">
     <!-- Hero Slider -->
@@ -697,6 +698,7 @@
       </a>
     </div>
   </section>
+
 
   <!-- Trending Destinations Section -->
   <section class="trending-section py-5">
