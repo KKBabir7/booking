@@ -316,10 +316,17 @@ class BookingController extends Controller
             }
         }
 
-        // Restaurant Pricing Update (Deposit + Food Bill)
-        if ($booking->type === 'restaurant' && $request->filled('food_bill')) {
+        // Restaurant Pricing Update (Deposit + Food Bill + Service Charge + Tax)
+        if ($booking->type === 'restaurant') {
             $deposit = $booking->deposit_amount ?: 500;
-            $booking->total_price = $deposit + (float) $request->food_bill;
+            $foodBill = (float) ($request->food_bill ?? 0);
+            $serviceCharge = (float) ($request->service_charge ?? 0);
+            $tax = (float) ($request->tax ?? 0);
+            
+            $booking->food_bill = $foodBill;
+            $booking->service_charge = $serviceCharge;
+            $booking->tax = $tax;
+            $booking->total_price = $deposit + $foodBill + $serviceCharge + $tax;
         }
 
         // Automatic Full Payment Settlement for Restaurant

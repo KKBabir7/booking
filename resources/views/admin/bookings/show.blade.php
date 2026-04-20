@@ -339,9 +339,31 @@
                                 <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Food Bill / Additional Amount (TK)</label>
                                 <div class="relative mb-4">
                                     <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">TK</span>
-                                    <input type="number" name="food_bill" value="{{ max(0, $booking->total_price - ($booking->deposit_amount ?: 500)) }}"
+                                    <input type="number" name="food_bill" id="food_bill_input" value="{{ $booking->food_bill ?: max(0, $booking->total_price - ($booking->deposit_amount ?: 500)) }}"
                                         class="w-full pl-10 pr-4 py-3 bg-rose-50 border border-rose-100 rounded-2xl text-sm font-black text-rose-700 transition focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-300" placeholder="Enter amount for food/items">
-                                    <div class="text-[9px] text-rose-400 font-bold uppercase mt-2 italic px-1">Note: Total Bill will be <span id="dynamic-deposit-note">{{ $booking->deposit_amount ?: 500 }}</span> (Booking) + this amount</div>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-6">
+                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Service Fee (TK)</label>
+                                        <div class="relative">
+                                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[10px]">TK</span>
+                                            <input type="number" name="service_charge" id="service_charge_input" value="{{ (int)$booking->service_charge }}"
+                                                class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 transition focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-300">
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tax Amount (TK)</label>
+                                        <div class="relative">
+                                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[10px]">TK</span>
+                                            <input type="number" name="tax" id="tax_input" value="{{ (int)$booking->tax }}"
+                                                class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 transition focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-300">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <div class="text-[9px] text-rose-400 font-bold uppercase mt-2 italic px-1">Note: Total Bill will be <span id="dynamic-deposit-note">{{ $booking->deposit_amount ?: 500 }}</span> (Booking) + THIS TOTAL AMOUNT</div>
                                 </div>
                                 <div class="flex items-center gap-2 mb-6 px-1">
                                     <input type="checkbox" name="confirm_full_payment" value="1" id="confirm_full_payment" 
@@ -466,7 +488,9 @@
             const paymentStatusSelect = document.getElementById('payment_status_select');
             
             // Restaurant Specific
-            const foodBillInput = document.querySelector('input[name="food_bill"]');
+            const foodBillInput = document.getElementById('food_bill_input');
+            const serviceFeeInput = document.getElementById('service_charge_input');
+            const taxInput = document.getElementById('tax_input');
             const confirmFullBillInput = document.getElementById('confirm_full_payment');
 
             // UI Elements for updates
@@ -525,17 +549,20 @@
             }
 
             // Restaurant "Confirm Full Payment Received" (The one in the red section)
-            if (confirmFullBillInput && foodBillInput) {
+            if (foodBillInput) foodBillInput.addEventListener('input', recalculate);
+            if (serviceFeeInput) serviceFeeInput.addEventListener('input', recalculate);
+            if (taxInput) taxInput.addEventListener('input', recalculate);
+
+            if (confirmFullBillInput) {
                 confirmFullBillInput.addEventListener('change', function() {
-                    const bill = parseFloat(foodBillInput.value) || 0;
-                    const total = depositAmount + bill;
-                    
                     if (this.checked) {
+                        const totalStr = valTotalPrice.innerText.replace(/[^0-9]/g, '');
+                        const total = parseInt(totalStr);
+                        
                         amountPaidInput.value = total;
                         paymentStatusSelect.value = 'success';
                         bookingStatusSelect.value = 'completed';
                         
-                        // Sync with the bottom checkbox
                         if (paymentCompleteCheckbox) {
                             paymentCompleteCheckbox.checked = true;
                             paymentCompleteCheckbox.parentElement.classList.add('bg-emerald-100', 'border-emerald-300');
@@ -543,7 +570,9 @@
                         
                         updateDue(total, total);
                     } else {
-                        // Revert to partial state
+                        const totalStr = valTotalPrice.innerText.replace(/[^0-9]/g, '');
+                        const total = parseInt(totalStr);
+                        
                         amountPaidInput.value = originalAmount;
                         paymentStatusSelect.value = originalPaymentStatus;
                         bookingStatusSelect.value = originalStatus;
@@ -560,7 +589,26 @@
             }
 
             function recalculate() {
-                if (!checkInInput || !checkOutInput || !roomPrice || bookingType === 'restaurant') return;
+                if (bookingType === 'restaurant') {
+                    const deposit = {{ $booking->deposit_amount ?: 500 }};
+                    const food = parseInt(foodBillInput.value) || 0;
+                    const sc = parseInt(serviceFeeInput.value) || 0;
+                    const tax = parseInt(taxInput.value) || 0;
+                    
+                    const newTotal = deposit + food + sc + tax;
+                    
+                    valTotalPrice.innerText = 'TK ' + newTotal.toLocaleString();
+                    
+                    if (confirmFullBillInput && confirmFullBillInput.checked) {
+                        amountPaidInput.value = newTotal;
+                        updateDue(newTotal, newTotal);
+                    } else {
+                        updateDue(newTotal, parseFloat(amountPaidInput.value));
+                    }
+                    return;
+                }
+
+                if (!checkInInput || !checkOutInput || !roomPrice) return;
 
                 const checkIn = new Date(checkInInput.value);
                 const checkOut = new Date(checkOutInput.value);
