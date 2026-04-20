@@ -31,6 +31,8 @@ class ConferenceHallController extends Controller
             'image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             'panorama_url' => 'nullable|url',
             'partial_payments' => 'nullable|array',
+            'service_charge' => 'nullable|numeric|min:0',
+            'tax' => 'nullable|numeric|min:0',
         ]);
 
         $data = $request->except(['image_file', 'status', 'partial_payments']);
@@ -63,6 +65,8 @@ class ConferenceHallController extends Controller
             'image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             'panorama_url' => 'nullable|url',
             'partial_payments' => 'nullable|array',
+            'service_charge' => 'nullable|numeric|min:0',
+            'tax' => 'nullable|numeric|min:0',
         ]);
 
         $data = $request->except(['image_file', 'status', 'partial_payments']);

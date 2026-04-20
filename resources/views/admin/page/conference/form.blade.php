@@ -29,6 +29,24 @@
             <label class="block text-sm font-semibold text-slate-700 mb-2">360&deg; Panorama Image URL</label>
             <input type="url" name="panorama_url" value="{{ old('panorama_url', $hall->panorama_url ?? '') }}" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" placeholder="e.g. https://pannellum.org/images/jfk.jpg">
         </div>
+
+        {{-- Service Charge --}}
+        <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Service Charge (per night/day)</label>
+            <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">TK</span>
+                <input type="number" name="service_charge" value="{{ old('service_charge', $hall->service_charge ?? '0') }}" class="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
+            </div>
+        </div>
+
+        {{-- Tax --}}
+        <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Tax (per night/day)</label>
+            <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">TK</span>
+                <input type="number" name="tax" value="{{ old('tax', $hall->tax ?? '0') }}" class="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
+            </div>
+        </div>
     </div>
 
     {{-- Payment Configuration --}}

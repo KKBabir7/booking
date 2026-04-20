@@ -48,7 +48,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-6">
+                <div class="grid grid-cols-2 gap-6 mb-6">
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-2">Price per Night *</label>
                         <div class="relative">
@@ -65,6 +65,25 @@
                             <input type="number" name="old_price"
                                 value="{{ old('old_price', $room->old_price ?? '') }}"
                                 class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all text-slate-500 line-through">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Service Charge (per night)</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">TK</span>
+                            <input type="number" name="service_charge" value="{{ old('service_charge', $room->service_charge ?? '0') }}"
+                                class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all text-slate-800 font-bold">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Tax (per night)</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">TK</span>
+                            <input type="number" name="tax" value="{{ old('tax', $room->tax ?? '0') }}"
+                                class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all text-slate-800 font-bold">
                         </div>
                     </div>
                 </div>

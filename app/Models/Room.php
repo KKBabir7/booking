@@ -33,6 +33,8 @@ class Room extends Model
         'gallery_images',
         'attributes',
         'partial_payments',
+        'service_charge',
+        'tax',
     ];
 
     protected $casts = [

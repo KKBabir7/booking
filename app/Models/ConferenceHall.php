@@ -16,6 +16,8 @@ class ConferenceHall extends Model
         'panorama_url',
         'status',
         'partial_payments',
+        'service_charge',
+        'tax',
     ];
 
     protected $casts = [

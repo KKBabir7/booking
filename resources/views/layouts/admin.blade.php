@@ -244,37 +244,39 @@
                     <i class="bi bi-compass-fill"></i> <span>Navbar</span>
                 </a>
 
-                <div class="sidebar-group">
-                    <div class="sidebar-link cursor-pointer flex justify-between items-center group"
-                        onclick="toggleSubmenu('home-sub')">
-                        <div class="flex items-center">
-                            <i class="bi bi-house-door-fill"></i>
-                            <span>Home Page</span>
+                @if(auth()->user()->isSuperAdmin())
+                    <div class="sidebar-group">
+                        <div class="sidebar-link cursor-pointer flex justify-between items-center group"
+                            onclick="toggleSubmenu('home-sub')">
+                            <div class="flex items-center">
+                                <i class="bi bi-house-door-fill"></i>
+                                <span>Home Page</span>
+                            </div>
+                            <i class="bi bi-chevron-down text-xs transition-transform duration-200" id="home-chevron"></i>
                         </div>
-                        <i class="bi bi-chevron-down text-xs transition-transform duration-200" id="home-chevron"></i>
+                        <div class="submenu {{ request()->is('admin/home/*') ? '' : 'hidden' }}" id="home-sub">
+                            <a href="{{ route('admin.home_banners.index') }}"
+                                class="sidebar-link {{ request()->routeIs('admin.home_banners.*') ? 'active' : '' }}">
+                                Hero Banners
+                            </a>
+                            <a href="{{ route('admin.home_promo_banners.index') }}"
+                                class="sidebar-link {{ request()->routeIs('admin.home_promo_banners.*') ? 'active' : '' }}">
+                                Offer Banner
+                            </a>
+                            <a href="{{ route('admin.home_services.index') }}"
+                                class="sidebar-link {{ request()->routeIs('admin.home_services.*') ? 'active' : '' }}">
+                                Premium Services
+                            </a>
+                            <a href="{{ route('admin.home_restaurant') }}"
+                                class="sidebar-link {{ request()->routeIs('admin.home_restaurant') ? 'active' : '' }}">Restaurant</a>
+                            <a href="{{ route('admin.home_conference') }}"
+                                class="sidebar-link {{ request()->routeIs('admin.home_conference') ? 'active' : '' }}">Conference</a>
+                            <a href="{{ route('admin.home_clients.index') }}"
+                                class="sidebar-link {{ request()->routeIs('admin.home_clients.*') ? 'active' : '' }}">Our
+                                Clients</a>
+                        </div>
                     </div>
-                    <div class="submenu {{ request()->is('admin/home/*') ? '' : 'hidden' }}" id="home-sub">
-                        <a href="{{ route('admin.home_banners.index') }}"
-                            class="sidebar-link {{ request()->routeIs('admin.home_banners.*') ? 'active' : '' }}">
-                            Hero Banners
-                        </a>
-                        <a href="{{ route('admin.home_promo_banners.index') }}"
-                            class="sidebar-link {{ request()->routeIs('admin.home_promo_banners.*') ? 'active' : '' }}">
-                            Offer Banner
-                        </a>
-                        <a href="{{ route('admin.home_services.index') }}"
-                            class="sidebar-link {{ request()->routeIs('admin.home_services.*') ? 'active' : '' }}">
-                            Premium Services
-                        </a>
-                        <a href="{{ route('admin.home_restaurant') }}"
-                            class="sidebar-link {{ request()->routeIs('admin.home_restaurant') ? 'active' : '' }}">Restaurant</a>
-                        <a href="{{ route('admin.home_conference') }}"
-                            class="sidebar-link {{ request()->routeIs('admin.home_conference') ? 'active' : '' }}">Conference</a>
-                        <a href="{{ route('admin.home_clients.index') }}"
-                            class="sidebar-link {{ request()->routeIs('admin.home_clients.*') ? 'active' : '' }}">Our
-                            Clients</a>
-                    </div>
-                </div>
+                @endif
 
                 <a href="{{ route('admin.rooms.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.rooms.*') ? 'active' : '' }}">
@@ -286,35 +288,37 @@
                     <i class="bi bi-building text-xl"></i> <span>Conference Halls</span>
                 </a>
 
-                <a href="{{ route('admin.page.edit', 'restaurant') }}"
-                    class="sidebar-link {{ request()->is('admin/page/restaurant') ? 'active' : '' }}">
-                    <i class="bi bi-egg-fried"></i> <span>Restaurant</span>
-                </a>
+                @if(auth()->user()->isSuperAdmin())
+                    <a href="{{ route('admin.page.edit', 'restaurant') }}"
+                        class="sidebar-link {{ request()->is('admin/page/restaurant') ? 'active' : '' }}">
+                        <i class="bi bi-egg-fried"></i> <span>Restaurant</span>
+                    </a>
 
-                <a href="{{ route('admin.page.contact_information.edit') }}"
-                    class="sidebar-link {{ request()->routeIs('admin.page.contact_information.*') ? 'active' : '' }}">
-                    <i class="bi bi-telephone-outbound"></i> <span>Contact Info</span>
-                </a>
+                    <a href="{{ route('admin.page.contact_information.edit') }}"
+                        class="sidebar-link {{ request()->routeIs('admin.page.contact_information.*') ? 'active' : '' }}">
+                        <i class="bi bi-telephone-outbound"></i> <span>Contact Info</span>
+                    </a>
 
-                <a href="{{ route('admin.page.about.edit') }}"
-                    class="sidebar-link {{ request()->routeIs('admin.page.about.*') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-person"></i> <span>About Page</span>
-                </a>
+                    <a href="{{ route('admin.page.about.edit') }}"
+                        class="sidebar-link {{ request()->routeIs('admin.page.about.*') ? 'active' : '' }}">
+                        <i class="bi bi-file-earmark-person"></i> <span>About Page</span>
+                    </a>
 
-                <a href="{{ route('admin.page.privacy.edit') }}"
-                    class="sidebar-link {{ request()->routeIs('admin.page.privacy.*') ? 'active' : '' }}">
-                    <i class="bi bi-shield-lock"></i> <span>Privacy Policy</span>
-                </a>
+                    <a href="{{ route('admin.page.privacy.edit') }}"
+                        class="sidebar-link {{ request()->routeIs('admin.page.privacy.*') ? 'active' : '' }}">
+                        <i class="bi bi-shield-lock"></i> <span>Privacy Policy</span>
+                    </a>
 
-                <a href="{{ route('admin.page.terms.edit') }}"
-                    class="sidebar-link {{ request()->routeIs('admin.page.terms.*') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-text"></i> <span>Terms of Service</span>
-                </a>
+                    <a href="{{ route('admin.page.terms.edit') }}"
+                        class="sidebar-link {{ request()->routeIs('admin.page.terms.*') ? 'active' : '' }}">
+                        <i class="bi bi-file-earmark-text"></i> <span>Terms of Service</span>
+                    </a>
 
-                <a href="{{ route('admin.page.faq.edit') }}"
-                    class="sidebar-link {{ request()->routeIs('admin.page.faq.*') ? 'active' : '' }}">
-                    <i class="bi bi-question-circle"></i> <span>FAQ Page</span>
-                </a>
+                    <a href="{{ route('admin.page.faq.edit') }}"
+                        class="sidebar-link {{ request()->routeIs('admin.page.faq.*') ? 'active' : '' }}">
+                        <i class="bi bi-question-circle"></i> <span>FAQ Page</span>
+                    </a>
+                @endif
 
                 <div class="px-6 mt-6 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider sidebar-section-title">Operations
                 </div>
@@ -370,17 +374,19 @@
                     @endif
                 </a>
 
-                <!-- SEO Menu -->
-                <a href="{{ route('admin.seo.index') }}"
-                    class="sidebar-link {{ request()->routeIs('admin.seo.*') ? 'active' : '' }}">
-                    <i class="bi bi-search"></i> <span>SEO</span>
-                </a>
+                @if(auth()->user()->isSuperAdmin())
+                    <!-- SEO Menu -->
+                    <a href="{{ route('admin.seo.index') }}"
+                        class="sidebar-link {{ request()->routeIs('admin.seo.*') ? 'active' : '' }}">
+                        <i class="bi bi-search"></i> <span>SEO</span>
+                    </a>
 
-                <!-- Currencies Menu -->
-                <a href="{{ route('admin.currencies.index') }}"
-                    class="sidebar-link {{ request()->routeIs('admin.currencies.*') ? 'active' : '' }}">
-                    <i class="bi bi-currency-exchange"></i> <span>Currencies</span>
-                </a>
+                    <!-- Currencies Menu -->
+                    <a href="{{ route('admin.currencies.index') }}"
+                        class="sidebar-link {{ request()->routeIs('admin.currencies.*') ? 'active' : '' }}">
+                        <i class="bi bi-currency-exchange"></i> <span>Currencies</span>
+                    </a>
+                @endif
 
                 <a href="{{ route('admin.users.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }} flex items-center justify-between">

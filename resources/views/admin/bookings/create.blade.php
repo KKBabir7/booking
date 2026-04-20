@@ -104,6 +104,8 @@
                             @foreach($rooms as $room)
                                 <option value="{{ $room->id }}" 
                                     data-price="{{ $room->price }}"
+                                    data-service-charge="{{ $room->service_charge ?? 0 }}"
+                                    data-tax="{{ $room->tax ?? 0 }}"
                                     data-partial-payments='@json($room->partial_payments ?? [50, 70, 100])'>
                                     {{ $room->name }} ({{ $room->room_type }})
                                 </option>
@@ -121,6 +123,8 @@
                             @foreach($halls as $hall)
                                 <option value="{{ $hall->id }}" 
                                     data-price="{{ $hall->price }}"
+                                    data-service-charge="{{ $hall->service_charge ?? 0 }}"
+                                    data-tax="{{ $hall->tax ?? 0 }}"
                                     data-partial-payments='@json($hall->partial_payments ?? [50, 70, 100])'>
                                     {{ $hall->name }}
                                 </option>
@@ -255,8 +259,10 @@
                 const percentages = roomSelected.data('partial-payments') || [50, 70, 100];
 
                 if (diffDays > 0 && pricePerNight > 0) {
-                    total = pricePerNight * diffDays;
-                    summaryTxt = `${pricePerNight} TK x ${diffDays} Night${diffDays > 1 ? 's' : ''}`;
+                    const serviceCharge = roomSelected.data('service-charge') || 0;
+                    const tax = roomSelected.data('tax') || 0;
+                    total = (pricePerNight + serviceCharge + tax) * diffDays;
+                    summaryTxt = `${pricePerNight} TK + ${serviceCharge} SC + ${tax} TAX x ${diffDays} Night${diffDays > 1 ? 's' : ''}`;
                 } else {
                     total = pricePerNight;
                 }
@@ -272,8 +278,10 @@
                 const percentages = hallSelected.data('partial-payments') || [50, 70, 100];
 
                 if (diffDays > 0 && pricePerDay > 0) {
-                    total = pricePerDay * diffDays;
-                    summaryTxt = `${pricePerDay} TK x ${diffDays} Day${diffDays > 1 ? 's' : ''}`;
+                    const serviceCharge = hallSelected.data('service-charge') || 0;
+                    const tax = hallSelected.data('tax') || 0;
+                    total = (pricePerDay + serviceCharge + tax) * diffDays;
+                    summaryTxt = `${pricePerDay} TK + ${serviceCharge} SC + ${tax} TAX x ${diffDays} Day${diffDays > 1 ? 's' : ''}`;
                 } else {
                     total = pricePerDay;
                 }

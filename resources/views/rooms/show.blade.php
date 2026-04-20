@@ -636,8 +636,12 @@
                   <span class="small">{{ $activeCurrency->symbol }} <span id="subtotalAmount">0</span></span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
-                  <span class="text-muted small">Service fee</span>
-                  <span class="small">{{ $activeCurrency->symbol }} <span id="serviceFeeAmount">0</span></span>
+                  <span class="text-muted small">Service Charge</span>
+                  <span class="small">{{ $activeCurrency->symbol }} <span id="serviceChargeAmount">0</span></span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                  <span class="text-muted small">Tax</span>
+                  <span class="small">{{ $activeCurrency->symbol }} <span id="taxAmount">0</span></span>
                 </div>
                 <hr>
                 <div class="d-flex justify-content-between">
@@ -781,6 +785,8 @@
     window.roomMaxChildren = {{ $room->capacity_children ?? 10 }};
     window.roomMaxInfants = {{ $room->capacity_infants ?? 5 }};
     window.roomMaxPets = {{ $room->capacity_pets ?? 2 }};
+    window.roomServiceCharge = {{ $room->service_charge ?? 0 }};
+    window.roomTax = {{ $room->tax ?? 0 }};
     window.roomPayments = @json($room->partial_payments ?? [50, 70, 100]);
   </script>
   <script src="{{ asset('assets/js/room-details.js') }}"></script>

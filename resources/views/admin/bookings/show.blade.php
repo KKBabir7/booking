@@ -156,28 +156,24 @@
                     <!-- 3 Column Stats Grid -->
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); text-align: center;">
                         <div class="px-4" style="border-right: 1px solid rgba(255,255,255,0.15);">
-                            <div class="text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">Total Amount
-                                Bill</div>
-                            <div class="text-3xl font-black tracking-tight" id="val-total-price">TK
-                                {{ number_format($booking->total_price) }}</div>
+                            <div style="font-size:12px" class=" font-black text-white/50 uppercase tracking-widest mb-2">Total Amount Bill</div>
+                            <h4 class="fw-black text-3xl font-bold text-white mb-0 tracking-tight" id="val-total-price">TK {{ number_format($booking->total_price, 0) }}</h4>
                         </div>
                         <div class="px-4" style="border-right: 1px solid rgba(255,255,255,0.15);">
-                            <div class="text-[10px] font-black text-white/50 uppercase tracking-widest mb-2" id="label-paid-amount">
+                            <div style="font-size:12px" class="text-[10px] font-black text-white/50 uppercase tracking-widest mb-2" id="label-paid-amount">
                                 {{ ($booking->amount_paid >= $booking->total_price) ? 'Total Amount Paid' : 'Advance Paid Amount' }}
                             </div>
-                            <div class="text-3xl font-black tracking-tight" id="val-paid-amount">TK
-                                {{ number_format($booking->amount_paid) }}</div>
+                            <h4 class="fw-black text-3xl font-bold text-white mb-0 tracking-tight" id="val-paid-amount">TK {{ number_format($booking->amount_paid, 0) }}</h4>
                         </div>
                         <div class="px-4">
-                            <div class="text-[10px] font-black text-white/50 uppercase tracking-widest mb-2" id="label-due">
+                            <div style="font-size:12px"  class="font-black text-white/50 uppercase tracking-widest mb-2" id="label-due">
                                 {{ ($booking->amount_paid >= $booking->total_price) ? 'Final Payment Status' : 'Remaining Due Balance' }}
                             </div>
                             <div class="text-3xl font-black tracking-tight" id="val-due-amount">
                                 @if($booking->amount_paid >= $booking->total_price)
                                     <span class="text-emerald-200">CLEARED</span>
                                 @else
-                                    <span class="text-rose-400">TK
-                                        {{ number_format($booking->total_price - $booking->amount_paid) }}</span>
+                                    <h4 class="fw-black text-rose-400 mb-0 tracking-tight" id="val-remaining-due">TK {{ number_format($booking->total_price - $booking->amount_paid, 0) }}</h4>
                                 @endif
                             </div>
                         </div>
@@ -483,7 +479,9 @@
             const billingBanner = document.getElementById('billing-banner');
             const daysIndicator = document.getElementById('days-indicator');
 
-            const roomPrice = {{ $booking->room->price ?? 0 }};
+            const roomPrice = {{ $booking->type === 'room' ? ($booking->room->price ?? 0) : ($booking->conferenceHall->price ?? 0) }};
+            const serviceChargePerNight = {{ $booking->type === 'room' ? ($booking->room->service_charge ?? 0) : ($booking->conferenceHall->service_charge ?? 0) }};
+            const taxPerNight = {{ $booking->type === 'room' ? ($booking->room->tax ?? 0) : ($booking->conferenceHall->tax ?? 0) }};
             const bookingType = '{{ $booking->type }}';
             const depositAmount = {{ $booking->deposit_amount ?: 500 }};
 
@@ -567,17 +565,29 @@
                 const checkIn = new Date(checkInInput.value);
                 const checkOut = new Date(checkOutInput.value);
 
-                if (checkIn && checkOut && checkOut > checkIn) {
+                if (checkIn && checkOut && checkOut >= checkIn) {
                     const diffTime = Math.abs(checkOut - checkIn);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    // Logic update: Conferences are inclusive (same day = 1, next day = 2)
+                    if (bookingType === 'conference') {
+                        diffDays = diffDays + 1;
+                    } else {
+                        // Rooms are nights (same day shouldn't really happen but handle it)
+                        diffDays = diffDays > 0 ? diffDays : 1;
+                    }
 
-                    const subtotal = roomPrice * diffDays;
-                    const serviceFee = Math.round(subtotal * 0.05);
-                    const newTotal = subtotal + serviceFee;
+                    const subtotal = Math.round(roomPrice * diffDays);
+                    const totalServiceCharge = Math.round(serviceChargePerNight * diffDays);
+                    const totalTax = Math.round(taxPerNight * diffDays);
+                    const newTotal = subtotal + totalServiceCharge + totalTax;
 
                     // Update UI
                     valTotalPrice.innerText = 'TK ' + newTotal.toLocaleString();
-                    if (daysIndicator) daysIndicator.innerText = 'Stay Duration: ' + diffDays + ' Nights';
+                    if (daysIndicator) {
+                        const unit = (bookingType === 'conference') ? 'Day' : 'Night';
+                        daysIndicator.innerText = `Stay Duration: ${diffDays} ${unit}${diffDays > 1 ? 's' : ''}`;
+                    }
 
                     // If full payment wasn't confirmed yet, update the banner based on current input
                     if (!paymentCompleteCheckbox.checked) {

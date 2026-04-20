@@ -85,12 +85,14 @@
                             <a href="{{ route('admin.users.edit', $user) }}" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Edit User">
                                 <i class="bi bi-pencil-square fs-5"></i>
                             </a>
-                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline" onsubmit="return confirm('Permanently delete user {{ $user->name }}?')">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Delete User">
-                                    <i class="bi bi-trash-fill fs-5"></i>
-                                </button>
-                            </form>
+                            @if(auth()->user()->isSuperAdmin())
+                                <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline" onsubmit="return confirm('Permanently delete user {{ $user->name }}?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Delete User">
+                                        <i class="bi bi-trash-fill fs-5"></i>
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     </td>
                 </tr>

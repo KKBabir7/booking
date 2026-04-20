@@ -46,6 +46,8 @@ class RoomController extends Controller
             'attributes' => 'nullable|array',
             'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
             'partial_payments' => 'nullable|array',
+            'service_charge' => 'nullable|numeric|min:0',
+            'tax' => 'nullable|numeric|min:0',
         ]);
 
         $data = $request->except(['image_file', 'gallery_images', 'faqs', 'amenities', 'attributes', 'partial_payments']);
@@ -139,6 +141,8 @@ class RoomController extends Controller
             'attributes' => 'nullable|array',
             'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
             'partial_payments' => 'nullable|array',
+            'service_charge' => 'nullable|numeric|min:0',
+            'tax' => 'nullable|numeric|min:0',
         ]);
 
         $data = $request->except(['image_file', 'gallery_images', 'faqs', 'amenities', 'attributes', 'delete_gallery_images', 'partial_payments']);

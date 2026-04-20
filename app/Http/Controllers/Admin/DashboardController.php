@@ -29,13 +29,17 @@ class DashboardController extends Controller
         $stats = [
             'rooms_count' => Room::count(),
             'halls_count' => ConferenceHall::count(),
-            'users_count' => User::count(),
-            'bookings_count' => Booking::count(),
+            'users_count' => User::where('role', User::ROLE_USER)->count(),
+            'bookings_count' => Booking::where('status', '!=', 'payment_pending')->count(),
             'pending_bookings' => Booking::where('status', 'pending')->count(),
-            'revenue' => Booking::where('status', 'confirmed')->sum('total_price'),
+            'revenue' => Booking::whereIn('status', ['confirmed', 'completed'])->sum('total_price'),
         ];
         
-        $recentBookings = Booking::with(['user', 'room', 'conferenceHall'])->latest()->take(10)->get();
+        $recentBookings = Booking::with(['user', 'room', 'conferenceHall'])
+            ->where('status', '!=', 'payment_pending')
+            ->latest()
+            ->take(5)
+            ->get();
         
         return view('admin.dashboard', compact('stats', 'recentBookings'));
     }

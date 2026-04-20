@@ -148,12 +148,14 @@
                             <a href="{{ route('admin.bookings.show', $booking) }}" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Details">
                                 <i class="bi bi-eye-fill fs-5"></i>
                             </a>
-                            <form action="{{ route('admin.bookings.destroy', $booking) }}" method="POST" class="inline" onsubmit="return confirm('Delete reservation #{{ $booking->id }}?')">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Delete">
-                                    <i class="bi bi-trash-fill fs-5"></i>
-                                </button>
-                            </form>
+                            @if(auth()->user()->isSuperAdmin())
+                                <form action="{{ route('admin.bookings.destroy', $booking) }}" method="POST" class="inline" onsubmit="return confirm('Delete reservation #{{ $booking->id }}?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Delete">
+                                        <i class="bi bi-trash-fill fs-5"></i>
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     </td>
                 </tr>

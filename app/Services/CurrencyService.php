@@ -66,7 +66,7 @@ class CurrencyService
             return number_format($converted, 0) . ' ' . $currency->symbol;
         }
 
-        return $currency->symbol . ' ' . number_format($converted, 2);
+        return $currency->symbol . ' ' . number_format($converted, 0);
     }
 
     /**

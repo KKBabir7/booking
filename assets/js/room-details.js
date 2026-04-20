@@ -8,23 +8,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.getElementById('booking-dates');
     const nightCountEl = document.getElementById('nightCount');
     const subtotalEl = document.getElementById('subtotalAmount');
-    const serviceFeeEl = document.getElementById('serviceFeeAmount');
+    const serviceChargeEl = document.getElementById('serviceChargeAmount');
+    const taxEl = document.getElementById('taxAmount');
     const totalEl = document.getElementById('totalAmount');
     const basePrice = window.roomPrice || 299;
 
     const bookingCard = document.querySelector('.booking-card');
 
     const updatePriceBreakdown = (days) => {
-        if (!nightCountEl || !subtotalEl || !serviceFeeEl || !totalEl) return;
+        if (!nightCountEl || !subtotalEl || !serviceChargeEl || !taxEl || !totalEl) return;
         
         const rate = window.exchangeRate || 1;
         const subtotal = Math.round(basePrice * days * rate);
-        const serviceFee = Math.round(subtotal * 0.05); // 5% service fee
-        const total = subtotal + serviceFee;
+        
+        // Calculate dynamic charges per night
+        const dynamicServiceCharge = Math.round((window.roomServiceCharge || 0) * days * rate);
+        const dynamicTax = Math.round((window.roomTax || 0) * days * rate);
+        const totalCharges = dynamicServiceCharge + dynamicTax;
+        
+        const total = subtotal + totalCharges;
 
         nightCountEl.textContent = days;
         subtotalEl.textContent = subtotal.toLocaleString();
-        serviceFeeEl.textContent = serviceFee.toLocaleString();
+        serviceChargeEl.textContent = dynamicServiceCharge.toLocaleString();
+        taxEl.textContent = dynamicTax.toLocaleString();
         totalEl.textContent = total.toLocaleString();
 
         // Update the per-night base price display in the small text

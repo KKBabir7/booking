@@ -273,7 +273,14 @@ class BookingController extends Controller
             $startDate = \Carbon\Carbon::parse($request->check_in);
             $endDate = \Carbon\Carbon::parse($request->check_out);
             $days = $startDate->diffInDays($endDate);
-            $days = $days > 0 ? $days : 1;
+            
+            // For conference halls, we count inclusive days (e.g. 29th to 29th is 1 day, 29th to 30th is 2 days)
+            if ($booking->type === 'conference') {
+                $days = $days + 1;
+            } else {
+                // For rooms, we count nights
+                $days = $days > 0 ? $days : 1;
+            }
             
             $rate = 0;
             if ($booking->type === 'room') {
@@ -286,8 +293,26 @@ class BookingController extends Controller
             
             if ($rate > 0) {
                 $subtotal = $rate * $days;
-                $serviceFee = round($subtotal * 0.05);
-                $booking->total_price = $subtotal + $serviceFee;
+                
+                // Fetch dynamic charges from the model
+                $serviceChargePerNight = 0;
+                $taxPerNight = 0;
+                
+                if ($booking->type === 'room') {
+                    $item = \App\Models\Room::find($booking->room_id);
+                } elseif ($booking->type === 'conference') {
+                    $item = \App\Models\ConferenceHall::find($booking->hall_id);
+                }
+                
+                if ($item) {
+                    $serviceChargePerNight = $item->service_charge ?? 0;
+                    $taxPerNight = $item->tax ?? 0;
+                }
+                
+                $totalServiceCharge = $serviceChargePerNight * $days;
+                $totalTax = $taxPerNight * $days;
+                
+                $booking->total_price = $subtotal + $totalServiceCharge + $totalTax;
             }
         }
 

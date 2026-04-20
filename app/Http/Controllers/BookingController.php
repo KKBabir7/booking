@@ -81,8 +81,15 @@ class BookingController extends Controller
         }
 
         $subtotal = $room->price * $days;
-        $serviceFee = round($subtotal * 0.05);
-        $totalPrice = $subtotal + $serviceFee;
+        $totalServiceCharge = ($room->service_charge ?? 0) * $days;
+        $totalTax = ($room->tax ?? 0) * $days;
+        $totalPrice = $subtotal + $totalServiceCharge + $totalTax;
+
+        // Security Integrity Check: Validate payment amount against server-side calculation
+        $expectedPayable = round(($totalPrice * $request->payment_percentage) / 100);
+        if (abs($expectedPayable - $request->amount_to_pay) > 2) {
+            return back()->withErrors(['amount_to_pay' => 'Security Alert: Payment amount mismatch detected. Our security system has blocked this transaction. Please refresh the page and try again.']);
+        }
 
         $activeCurrency = $this->currencyService->getCurrentCurrency();
         $transaction_id = 'SSLCZ_' . uniqid();
@@ -217,9 +224,15 @@ class BookingController extends Controller
         $transaction_id = 'SSLCZ_' . uniqid();
 
         // Calculate total price accurately
-        $totalPrice = $hall->price ?? 0;
+        $totalPrice = ($hall->price ?? 0) + ($hall->service_charge ?? 0) + ($hall->tax ?? 0);
         $amountToPay = $request->amount_to_pay ?? $totalPrice;
         $percentage = $request->payment_percentage ?? 100;
+
+        // Security Integrity Check: Validate payment amount for Conference Hall
+        $expectedPayable = round(($totalPrice * $percentage) / 100);
+        if (abs($expectedPayable - $amountToPay) > 2) {
+            return back()->withErrors(['payment' => 'Security Alert: Price manipulation detected. Transaction aborted.']);
+        }
 
         $booking = Booking::create([
             'user_id' => Auth::id(),

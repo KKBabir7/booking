@@ -236,17 +236,30 @@
                 {{-- Dynamic Price Summary --}}
                 <div id="hallPriceSummary" class="rounded-4 bg-light p-4 mb-4" style="display:none;">
                   <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="small text-muted fw-bold text-uppercase" style="letter-spacing:.05em;">Selected Hall</span>
+                    <span class="small text-muted fw-bold text-uppercase" style="letter-spacing:.05em;">Hall</span>
                     <span class="fw-bold text-dark small" id="summaryHallName">—</span>
                   </div>
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="small text-muted fw-bold text-uppercase" style="letter-spacing:.05em;">Capacity</span>
                     <span class="fw-bold text-dark small" id="summaryCapacity">—</span>
                   </div>
-                  <hr class="my-2">
+                  <hr class="my-2 border-slate-200">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-muted uppercase tracking-wider">Subtotal</span>
+                    <span class="fw-bold text-slate-700" id="summarySubtotal">—</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-muted uppercase tracking-wider">Service Charge</span>
+                    <span class="fw-bold text-slate-700" id="summaryServiceCharge">—</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-muted uppercase tracking-wider">Tax</span>
+                    <span class="fw-bold text-slate-700" id="summaryTax">—</span>
+                  </div>
+                  <hr class="my-2 border-slate-200">
                   <div class="d-flex justify-content-between align-items-center">
-                    <span class="fw-black text-uppercase" style="letter-spacing:.05em;">Price</span>
-                    <span class="fw-black text-primary fs-5" id="summaryPrice">—</span>
+                    <span class="fw-black text-uppercase text-indigo-600" style="letter-spacing:.05em;">Total Bill</span>
+                    <span class="fw-black text-indigo-600 fs-5" id="summaryTotal">—</span>
                   </div>
                 </div>
 
@@ -342,6 +355,8 @@
             "{{ $hall->id }}": {
                 "name": "{{ $hall->name }}",
                 "price": {{ $hall->price ?? 0 }},
+                "service_charge": {{ $hall->service_charge ?? 0 }},
+                "tax": {{ $hall->tax ?? 0 }},
                 "partial_payments": @json($hall->partial_payments ?? [50, 70, 100]),
                 "items": [
                     @foreach($hall->bookings as $b)
@@ -388,10 +403,11 @@
 
       // Hall change: update price summary + store capacity
       $('#hallSelect').on('change', function() {
+        const hallId = $(this).val();
         const selected = $(this).find('option:selected');
-        const price    = selected.data('price');
         const capacity = selected.data('capacity');
         const name     = selected.text();
+        const hallData = window.hallBookings[hallId];
 
         selectedHallCapacity = capacity ? parseInt(capacity) : null;
         selectedHallName = name;
@@ -411,13 +427,26 @@
             window.datePicker.set('disable', []);
         }
 
-        if (price) {
-          $('#summaryHallName').text(name);
-          $('#summaryCapacity').text(capacity ? 'Up to ' + capacity + ' persons' : 'N/A');
+        if (hallData) {
           const rate = window.exchangeRate || 1;
           const symbol = window.currencySymbol || 'TK';
-          const formattedPrice = Math.round(parseInt(price) * rate).toLocaleString();
-          $('#summaryPrice').text(symbol + ' ' + formattedPrice + ' /session');
+          
+          const basePrice = hallData.price || 0;
+          const serviceCharge = hallData.service_charge || 0;
+          const tax = hallData.tax || 0;
+          const total = basePrice + serviceCharge + tax;
+
+          $('#summaryHallName').text(name);
+          $('#summaryCapacity').text(capacity ? 'Up to ' + capacity + ' persons' : 'N/A');
+          
+          $('#summarySubtotal').text(symbol + ' ' + Math.round(basePrice * rate).toLocaleString());
+          $('#summaryServiceCharge').text(symbol + ' ' + Math.round(serviceCharge * rate).toLocaleString());
+          $('#summaryTax').text(symbol + ' ' + Math.round(tax * rate).toLocaleString());
+          $('#summaryTotal').text(symbol + ' ' + Math.round(total * rate).toLocaleString());
+          
+          // Update hidden inputs for final submission
+          $('#amount_to_pay_input').val(Math.round(total * rate));
+
           $('#hallPriceSummary').slideDown(200);
         } else {
           $('#hallPriceSummary').slideUp(200);
@@ -501,9 +530,12 @@
         if (paymentModal) {
             const hallId = $('#hallSelect').val();
             const hallData = window.hallBookings[hallId];
-            const basePrice = hallData ? hallData.price : 0;
+            const basePrice = hallData ? (hallData.price || 0) : 0;
+            const serviceCharge = hallData ? (hallData.service_charge || 0) : 0;
+            const tax = hallData ? (hallData.tax || 0) : 0;
+            
             const rate = window.exchangeRate || 1;
-            const totalInCurrency = Math.round(basePrice * rate);
+            const totalInCurrency = Math.round((basePrice + serviceCharge + tax) * rate);
             const partialPayments = hallData ? hallData.partial_payments : [50, 70, 100];
             
             const container = document.getElementById('paymentPercentageContainer');
