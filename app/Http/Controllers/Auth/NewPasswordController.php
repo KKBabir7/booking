@@ -31,6 +31,29 @@ class NewPasswordController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // Handle Phone-based reset (verified via Firebase OTP on frontend)
+        if ($request->has('phone') && !$request->has('token')) {
+            $request->validate([
+                'phone' => ['required', 'string'],
+                'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            ]);
+
+            $user = User::where('phone', $request->phone)->first();
+
+            if (!$user) {
+                return back()->withErrors(['phone' => 'No account found with this phone number.']);
+            }
+
+            $user->forceFill([
+                'password' => Hash::make($request->password),
+                'remember_token' => Str::random(60),
+            ])->save();
+
+            event(new PasswordReset($user));
+
+            return redirect()->route('login')->with('status', 'Your password has been reset successfully!');
+        }
+
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],

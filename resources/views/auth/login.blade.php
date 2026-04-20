@@ -57,8 +57,8 @@
     <div class="container">
       <div class="row min-vh-100 align-items-center justify-content-center py-5">
         <div class="col-lg-12 col-xl-12">
-          <div class="auth-card shadow-lg border-0 overflow-hidden" style="border-radius: 20px;">
-            <div class="row g-0">
+          <div class="auth-card shadow-lg border-0 overflow-hidden d-flex flex-column" style="border-radius: 20px;">
+            <div class="row g-0 flex-grow-1 align-items-stretch">
               <!-- Left: Form side -->
               <div class="col-md-6 p-4 p-lg-5 bg-white">
                 <div class="auth-box">

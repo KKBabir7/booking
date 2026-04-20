@@ -46,6 +46,10 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        if ($request->verify_method === 'phone' && $request->is_phone_verified == '1') {
+            $user->markEmailAsVerified();
+        }
+
         event(new Registered($user));
 
         Auth::login($user);

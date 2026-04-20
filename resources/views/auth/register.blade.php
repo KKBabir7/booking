@@ -56,6 +56,30 @@
     .suggestion-item:hover { background: #f8f9fa; color: #f76156; }
     .suggestion-item i { color: #adb5bd; }
     .location-loading { padding: 10px; font-size: 0.8rem; color: #666; text-align: center; }
+
+    /* Verification Toggle Styles */
+    .verify-box {
+        border: 1px solid #eee;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 20px;
+        background: #fcfcfc;
+    }
+    .verify-option {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 5px;
+    }
+    .verify-option:hover { background: #fff; border-color: #f7615633; }
+    .verify-option.active { border-color: #f76156; background: #fff; }
+    .verify-icon { font-size: 1.2rem; color: #f76156; margin-right: 12px; }
+    .otp-group { display: none; margin-top: 15px; }
+    #recaptcha-container { margin-bottom: 10px; }
 </style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@21.0.8/build/css/intlTelInput.css">
 @endpush
@@ -109,6 +133,45 @@
                       <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
                     </div>
 
+                    <!-- Verification Choice -->
+                    <div class="verify-box">
+                      <p class="small fw-bold text-muted mb-3">Choose Verification Method:</p>
+                      
+                      <div class="verify-option active" id="opt_email">
+                        <input type="radio" name="verify_method" value="email" id="method_email" class="form-check-input custom-check me-2" checked>
+                        <label for="method_email" class="d-flex align-items-center cursor-pointer w-100 mb-0">
+                          <i class="bi bi-envelope verify-icon"></i>
+                          <div>
+                            <span class="d-block fw-bold small">Email Verification</span>
+                            <span class="text-muted" style="font-size: 0.7rem;">We'll send a link to your email.</span>
+                          </div>
+                        </label>
+                      </div>
+
+                      <div class="verify-option" id="opt_phone">
+                        <input type="radio" name="verify_method" value="phone" id="method_phone" class="form-check-input custom-check me-2">
+                        <label for="method_phone" class="d-flex align-items-center cursor-pointer w-100 mb-0">
+                          <i class="bi bi-phone verify-icon"></i>
+                          <div>
+                            <span class="d-block fw-bold small">Phone OTP</span>
+                            <span class="text-muted" style="font-size: 0.7rem;">Get code via SMS (Quick & Secure).</span>
+                          </div>
+                        </label>
+                      </div>
+
+                      <!-- Phone OTP Group -->
+                      <div class="otp-group" id="otp_container">
+                        <div id="recaptcha-container"></div>
+                        <div class="d-flex gap-2">
+                          <input type="text" id="otp_code" class="form-control auth-input" placeholder="Enter 6-digit OTP">
+                          <button type="button" id="btn_verify_otp" class="btn btn-dark rounded-pill px-4 small">Verify</button>
+                        </div>
+                        <div id="otp_message" class="small mt-2"></div>
+                      </div>
+                    </div>
+
+                    <input type="hidden" name="is_phone_verified" id="is_phone_verified" value="0">
+
                     <div class="form-check mb-4 d-flex align-items-center justify-content-center">
                       <input class="form-check-input custom-check me-2" type="checkbox" id="terms_agree" required>
                       <label class="form-check-label small text-muted cursor-pointer" for="terms_agree">
@@ -117,7 +180,8 @@
                     </div>
 
                     <div class="text-center">
-                      <button type="submit" class="btn btn-auth-primary px-5 py-2 w-100">SIGN UP</button>
+                      <button type="submit" id="btn_submit_main" class="btn btn-auth-primary px-5 py-2 w-100">SIGN UP</button>
+                      <button type="button" id="btn_send_otp" class="btn btn-auth-primary px-5 py-2 w-100" style="display: none;">GET OTP CODE</button>
                     </div>
                   </form>
                 </div>
@@ -252,6 +316,114 @@
         document.addEventListener('click', function(e) {
             if (!locationInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
                 suggestionsBox.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+<!-- Firebase SDK -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "{{ env('FIREBASE_API_KEY') }}",
+        authDomain: "{{ env('FIREBASE_AUTH_DOMAIN') }}",
+        projectId: "{{ env('FIREBASE_PROJECT_ID') }}",
+        storageBucket: "{{ env('FIREBASE_STORAGE_BUCKET') }}",
+        messagingSenderId: "{{ env('FIREBASE_MESSAGING_SENDER_ID') }}",
+        appId: "{{ env('FIREBASE_APP_ID') }}"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    auth.languageCode = 'en';
+
+    let confirmationResult;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const methodEmail = document.getElementById('method_email');
+        const methodPhone = document.getElementById('method_phone');
+        const otpContainer = document.getElementById('otp_container');
+        const btnSubmit = document.getElementById('btn_submit_main');
+        const btnSendOtp = document.getElementById('btn_send_otp');
+        const phoneOption = document.getElementById('opt_phone');
+        const emailOption = document.getElementById('opt_email');
+        const phoneInput = document.getElementById('full_phone');
+        const isPhoneVerified = document.getElementById('is_phone_verified');
+
+        // Toggle Logic
+        methodEmail.addEventListener('change', function() {
+            otpContainer.style.display = 'none';
+            btnSubmit.style.display = 'block';
+            btnSendOtp.style.display = 'none';
+            emailOption.classList.add('active');
+            phoneOption.classList.remove('active');
+        });
+
+        methodPhone.addEventListener('change', function() {
+            otpContainer.style.display = 'block';
+            btnSubmit.style.display = 'none';
+            btnSendOtp.style.display = 'block';
+            phoneOption.classList.add('active');
+            emailOption.classList.remove('active');
+            
+            if(!window.recaptchaVerifier) {
+                window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                    'size': 'invisible'
+                });
+            }
+        });
+
+        // Send OTP Logic
+        btnSendOtp.addEventListener('click', function() {
+            const phoneNumber = phoneInput.value;
+            if(!phoneNumber) {
+                alert('Please enter a valid phone number first.');
+                return;
+            }
+
+            btnSendOtp.disabled = true;
+            btnSendOtp.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Sending...';
+
+            signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier)
+                .then((result) => {
+                    confirmationResult = result;
+                    document.getElementById('otp_message').innerHTML = '<span class="text-success">OTP sent to your phone!</span>';
+                    btnSendOtp.style.display = 'none';
+                }).catch((error) => {
+                    btnSendOtp.disabled = false;
+                    btnSendOtp.innerHTML = 'GET OTP CODE';
+                    document.getElementById('otp_message').innerHTML = `<span class="text-danger">${error.message}</span>`;
+                });
+        });
+
+        // Verify OTP Logic
+        document.getElementById('btn_verify_otp').addEventListener('click', function() {
+            const code = document.getElementById('otp_code').value;
+            if(!code) return;
+
+            this.disabled = true;
+            this.innerHTML = '...';
+
+            confirmationResult.confirm(code).then((result) => {
+                isPhoneVerified.value = "1";
+                document.getElementById('otp_message').innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle"></i> Phone Verified!</span>';
+                document.getElementById('otp_container').innerHTML = '';
+                btnSubmit.style.display = 'block';
+                btnSubmit.innerHTML = 'COMPLETE SIGN UP';
+            }).catch((error) => {
+                this.disabled = false;
+                this.innerHTML = 'Verify';
+                document.getElementById('otp_message').innerHTML = '<span class="text-danger">Invalid code. Try again.</span>';
+            });
+        });
+
+        // Form Submit Shield
+        document.getElementById('btn_submit_main').closest('form').addEventListener('submit', function(e) {
+            if(methodPhone.checked && isPhoneVerified.value === "0") {
+                e.preventDefault();
+                alert('Please verify your phone number first.');
             }
         });
     });
