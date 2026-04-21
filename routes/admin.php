@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\OfferBannerController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
@@ -28,18 +29,29 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/notifications/counts', [DashboardController::class, 'getNotificationCounts'])->name('notifications.counts');
 
-    Route::resource('navbar', NavbarController::class);
-    Route::post('navbar/update-logo', [NavbarController::class, 'updateLogo'])->name('navbar.update-logo');
-    Route::resource('reviews', AdminReviewController::class);
-
-    // Rooms & Conference (Higher Priority)
-    Route::prefix('page')->group(function () {
-        Route::resource('rooms', AdminRoomController::class)->parameters(['rooms' => 'room'])->names('rooms');
-        Route::resource('conference', ConferenceHallController::class)->parameters(['conference' => 'conference_hall'])->names('conference');
-        Route::patch('conference/{conference_hall}/toggle-status', [ConferenceHallController::class, 'toggleStatus'])->name('conference.toggle-status');
+    // Content Management
+    Route::middleware('permission:manage_navbar')->group(function () {
+        Route::resource('navbar', NavbarController::class);
+        Route::post('navbar/update-logo', [NavbarController::class, 'updateLogo'])->name('navbar.update-logo');
     });
 
-    // Page & Settings (Now grouped under Super Admin protection)
+    Route::middleware('permission:view_feedbacks')->group(function () {
+        Route::resource('reviews', AdminReviewController::class);
+    });
+
+    // Rooms & Conference
+    Route::prefix('page')->group(function () {
+        Route::middleware('permission:view_rooms')->group(function () {
+            Route::resource('rooms', AdminRoomController::class)->parameters(['rooms' => 'room'])->names('rooms');
+        });
+        
+        Route::middleware('permission:view_conference')->group(function () {
+            Route::resource('conference', ConferenceHallController::class)->parameters(['conference' => 'conference_hall'])->names('conference');
+            Route::patch('conference/{conference_hall}/toggle-status', [ConferenceHallController::class, 'toggleStatus'])->name('conference.toggle-status');
+        });
+    });
+
+    // Page & Settings (Super Admin or Specific Permissions)
     Route::middleware('super_admin')->group(function () {
         // Modernized Home Page Routes
         Route::resource('home/banners', BannerController::class)->names('home_banners');
@@ -72,6 +84,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::get('/', [\App\Http\Controllers\Admin\SeoController::class, 'index'])->name('index');
             Route::post('/favicon', [\App\Http\Controllers\Admin\SeoController::class, 'updateFavicon'])->name('favicon.update');
             Route::delete('/favicon', [\App\Http\Controllers\Admin\SeoController::class, 'deleteFavicon'])->name('favicon.delete');
+            
             Route::post('/meta', [\App\Http\Controllers\Admin\SeoController::class, 'store'])->name('store');
             Route::put('/meta/{seo_meta}', [\App\Http\Controllers\Admin\SeoController::class, 'update'])->name('update');
             Route::delete('/meta/{seo_meta}', [\App\Http\Controllers\Admin\SeoController::class, 'destroy'])->name('destroy');
@@ -81,11 +94,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::put('/page/{page}', [PageSettingController::class, 'update'])->name('page.update');
 
         // Administrative (Payment & Admin Users)
+        Route::resource('roles', RoleController::class);
         Route::resource('admin-user', \App\Http\Controllers\Admin\AdminUserController::class)->names('admin-user');
         Route::get('payment-settings', [\App\Http\Controllers\Admin\PaymentSettingController::class, 'index'])->name('payment-settings.index');
         Route::post('payment-settings/update', [\App\Http\Controllers\Admin\PaymentSettingController::class, 'update'])->name('payment-settings.update');
-        Route::resource('restaurants', \App\Http\Controllers\Admin\RestaurantController::class);
-
+        
         // Email Management
         Route::get('/email-settings', [\App\Http\Controllers\Admin\EmailSettingController::class, 'index'])->name('email-settings.index');
         Route::post('/email-settings/credentials', [\App\Http\Controllers\Admin\EmailSettingController::class, 'updateCredentials'])->name('email-settings.update-credentials');
@@ -97,24 +110,31 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::patch('currencies/{currency}/set-default', [CurrencyController::class, 'setAsDefault'])->name('currencies.set-default');
         Route::patch('currencies/{currency}/toggle-status', [CurrencyController::class, 'toggleStatus'])->name('currencies.toggle-status');
 
-        // Delete Actions for Users & Bookings
+        // Delete Actions
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         Route::delete('bookings/{booking}', [\App\Http\Controllers\Admin\BookingController::class, 'destroy'])->name('bookings.destroy');
     });
 
+    // Restaurant
+    Route::middleware('permission:manage_restaurant')->group(function () {
+        Route::resource('restaurants', \App\Http\Controllers\Admin\RestaurantController::class);
+    });
 
+    // Users
+    Route::middleware('permission:view_users')->group(function () {
+        Route::resource('users', UserController::class)->except(['destroy']);
+    });
 
-
-
-    // Users (General Admin access)
-    Route::resource('users', UserController::class)->except(['destroy']);
-
-    // Bookings (General Admin access)
-    Route::get('bookings/{booking}/invoice', [\App\Http\Controllers\Admin\BookingController::class, 'invoice'])->name('bookings.invoice');
-    Route::resource('bookings', \App\Http\Controllers\Admin\BookingController::class)->except(['destroy']);
+    // Bookings
+    Route::middleware('permission:view_bookings')->group(function () {
+        Route::get('bookings/{booking}/invoice', [\App\Http\Controllers\Admin\BookingController::class, 'invoice'])->name('bookings.invoice');
+        Route::resource('bookings', \App\Http\Controllers\Admin\BookingController::class)->except(['destroy']);
+    });
 
     // Contact Messages
-    Route::resource('contacts', \App\Http\Controllers\Admin\ContactController::class)->only(['index', 'show', 'destroy']);
-    Route::post('contacts/{contact}/reply', [\App\Http\Controllers\Admin\ContactController::class, 'reply'])->name('contacts.reply');
+    Route::middleware('permission:view_feedbacks')->group(function () {
+        Route::resource('contacts', \App\Http\Controllers\Admin\ContactController::class)->only(['index', 'show', 'destroy']);
+        Route::post('contacts/{contact}/reply', [\App\Http\Controllers\Admin\ContactController::class, 'reply'])->name('contacts.reply');
+    });
 
 });

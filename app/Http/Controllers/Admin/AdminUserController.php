@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -16,6 +17,7 @@ class AdminUserController extends Controller
     public function index()
     {
         $admins = User::whereIn('role', [User::ROLE_SUPER_ADMIN, User::ROLE_ADMIN, 'manager', 'editor', 'staff'])
+            ->orWhereHas('roles')
             ->latest()
             ->paginate(10);
             
@@ -27,12 +29,7 @@ class AdminUserController extends Controller
      */
     public function create()
     {
-        $roles = [
-            'admin' => 'Admin (Full Access)',
-            'manager' => 'Manager',
-            'editor' => 'Editor',
-            'staff' => 'Staff'
-        ];
+        $roles = Role::all();
         return view('admin.admins.form', compact('roles'));
     }
 
@@ -45,16 +42,20 @@ class AdminUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'string', 'in:admin,manager,editor,staff'],
+            'role_id' => ['required', 'exists:roles,id'],
         ]);
 
-        User::create([
+        $role = Role::find($request->role_id);
+
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'is_admin' => true, // Legacy compatibility
+            'role' => $role->slug, // Compatibility
+            'is_admin' => true,
         ]);
+
+        $user->roles()->sync([$role->id]);
 
         return redirect()->route('admin.admin-user.index')->with('success', 'Admin user created successfully.');
     }
@@ -64,15 +65,13 @@ class AdminUserController extends Controller
      */
     public function edit(User $admin_user)
     {
-        $roles = [
-            'admin' => 'Admin (Full Access)',
-            'manager' => 'Manager',
-            'editor' => 'Editor',
-            'staff' => 'Staff'
-        ];
+        $roles = Role::all();
+        $userRoleId = $admin_user->roles->first()?->id;
+
         return view('admin.admins.form', [
             'admin' => $admin_user,
-            'roles' => $roles
+            'roles' => $roles,
+            'userRoleId' => $userRoleId
         ]);
     }
 
@@ -84,7 +83,7 @@ class AdminUserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$admin_user->id],
-            'role' => ['required', 'string', 'in:admin,manager,editor,staff'],
+            'role_id' => ['required', 'exists:roles,id'],
         ]);
 
         if ($request->filled('password')) {
@@ -94,10 +93,14 @@ class AdminUserController extends Controller
             $admin_user->password = Hash::make($request->password);
         }
 
+        $role = Role::find($request->role_id);
+
         $admin_user->name = $request->name;
         $admin_user->email = $request->email;
-        $admin_user->role = $request->role;
+        $admin_user->role = $role->slug; // Compatibility
         $admin_user->save();
+
+        $admin_user->roles()->sync([$role->id]);
 
         return redirect()->route('admin.admin-user.index')->with('success', 'Admin user updated successfully.');
     }
@@ -119,4 +122,3 @@ class AdminUserController extends Controller
         return back()->with('success', 'Admin user deleted successfully.');
     }
 }
-

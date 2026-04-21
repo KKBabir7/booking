@@ -49,10 +49,12 @@
                     <label class="text-xs font-black text-slate-400 uppercase tracking-widest">Assigned Role</label>
                     <div class="relative">
                         <i class="bi bi-shield-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <select name="role" class="w-full pl-11 pr-4 py-3 bg-slate-50 border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all appearance-none" style="padding-left: 37px;" required>
-                            @foreach($roles as $value => $label)
-                                <option value="{{ $value }}" {{ old('role', $admin->role ?? '') == $value ? 'selected' : '' }}>
-                                    {{ $label }}
+                        <select name="role_id" class="w-full pl-11 pr-4 py-3 bg-slate-50 border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all appearance-none" style="padding-left: 37px;" required>
+                            <option value="">Select a Role</option>
+                            @foreach($roles as $role)
+                                <option value="{{ $role->id }}" 
+                                    {{ (old('role_id', $userRoleId ?? '') == $role->id) ? 'selected' : '' }}>
+                                    {{ $role->name }}
                                 </option>
                             @endforeach
                         </select>

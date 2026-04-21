@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Notifications\CustomVerifyEmail;
+use App\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * Role constants

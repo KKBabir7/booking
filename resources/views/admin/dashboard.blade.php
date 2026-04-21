@@ -7,6 +7,7 @@
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- Total Bookings -->
+        @if(auth()->user()->hasPermission('view_bookings'))
         <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 group hover:shadow-md transition-all duration-300">
             <div class="relative z-10">
                 <div class="flex items-center justify-between mb-8">
@@ -55,8 +56,10 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Total Users -->
+        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('view_users'))
         <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 group hover:shadow-md transition-all duration-300">
             <div class="relative z-10">
                 <div class="flex items-center justify-between mb-8">
@@ -71,11 +74,13 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
 
     <!-- Main Content Area -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Recent Bookings -->
+        @if(auth()->user()->hasPermission('view_bookings'))
         <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div class="p-8 pb-4 flex justify-between items-center">
                 <h3 class="text-xl font-black text-slate-800 tracking-tight">Recent Bookings</h3>
@@ -130,6 +135,15 @@
                 </table>
             </div>
         </div>
+        @else
+        <div class="lg:col-span-2 bg-white rounded-3xl p-8 border border-slate-100 flex flex-col items-center justify-center text-center">
+            <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
+                <i class="bi bi-shield-lock text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-700 mb-2">Welcome to NGH Admin</h3>
+            <p class="text-sm text-slate-400 max-w-xs">You have limited access to the system modules. Please use the sidebar to navigate to your assigned areas.</p>
+        </div>
+        @endif
         
         <!-- Quick Actions Sidebar -->
         <div class="space-y-6">
@@ -137,18 +151,23 @@
                 <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
                 <h3 class="text-lg font-bold mb-4 relative z-10">Quick Actions</h3>
                 <div class="grid grid-cols-1 gap-3 relative z-10">
+                    @if(auth()->user()->hasPermission('view_rooms'))
                     <a href="{{ route('admin.rooms.create') }}" class="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/20 rounded-2xl transition group">
                         <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition">
                             <i class="bi bi-door-open-fill"></i>
                         </div>
                         <span class="text-sm font-bold">Add New Room</span>
                     </a>
+                    @endif
+                    
+                    @if(auth()->user()->hasPermission('view_bookings'))
                     <a href="{{ route('admin.bookings.index') }}" class="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/20 rounded-2xl transition group">
                         <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition">
                             <i class="bi bi-briefcase-fill"></i>
                         </div>
                         <span class="text-sm font-bold">Manage Bookings</span>
                     </a>
+                    @endif
                 </div>
             </div>
 
@@ -164,6 +183,7 @@
                         <span>Framework</span>
                         <span class="text-slate-400">Laravel v{{ app()->version() }}</span>
                     </div>
+                    @if(auth()->user()->isSuperAdmin())
                     <div class="pt-4 border-t border-slate-50">
                         <div class="flex justify-between items-center mb-2">
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Server Load</span>
@@ -173,10 +193,10 @@
                             <div class="w-1/4 h-full bg-indigo-500 rounded-full"></div>
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 </div>
 @endsection
-

@@ -93,7 +93,8 @@
         .sidebar-link.active {
             background: var(--primary-color);
             color: white;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 10px 15px -3px rgba(79, 230, 229, 0.3);
+            transition: all 0.2s ease;
         }
 
         .submenu {
@@ -239,10 +240,12 @@
                     <i class="bi bi-grid-1x2-fill"></i> <span>Dashboard</span>
                 </a>
 
+                @if(auth()->user()->hasPermission('manage_navbar'))
                 <a href="{{ route('admin.navbar.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.navbar.*') ? 'active' : '' }}">
                     <i class="bi bi-compass-fill"></i> <span>Navbar</span>
                 </a>
+                @endif
 
                 @if(auth()->user()->isSuperAdmin())
                     <div class="sidebar-group">
@@ -278,22 +281,28 @@
                     </div>
                 @endif
 
+                @if(auth()->user()->hasPermission('view_rooms'))
                 <a href="{{ route('admin.rooms.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.rooms.*') ? 'active' : '' }}">
                     <i class="bi bi-door-open-fill"></i> <span>Rooms</span>
                 </a>
+                @endif
 
+                @if(auth()->user()->hasPermission('view_conference'))
                 <a href="{{ route('admin.conference.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.conference.*') ? 'active' : '' }}">
                     <i class="bi bi-building text-xl"></i> <span>Conference Halls</span>
                 </a>
+                @endif
 
-                @if(auth()->user()->isSuperAdmin())
+                @if(auth()->user()->hasPermission('manage_restaurant'))
                     <a href="{{ route('admin.page.edit', 'restaurant') }}"
                         class="sidebar-link {{ request()->is('admin/page/restaurant') ? 'active' : '' }}">
                         <i class="bi bi-egg-fried"></i> <span>Restaurant</span>
                     </a>
+                @endif
 
+                @if(auth()->user()->isSuperAdmin())
                     <a href="{{ route('admin.page.contact_information.edit') }}"
                         class="sidebar-link {{ request()->routeIs('admin.page.contact_information.*') ? 'active' : '' }}">
                         <i class="bi bi-telephone-outbound"></i> <span>Contact Info</span>
@@ -323,6 +332,7 @@
                 <div class="px-6 mt-6 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider sidebar-section-title">Operations
                 </div>
 
+                @if(auth()->user()->hasPermission('view_bookings'))
                 <a href="{{ route('admin.bookings.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.bookings.*') ? 'active' : '' }} flex items-center justify-between">
                     <div class="flex items-center">
@@ -339,7 +349,9 @@
                             style="display: none;"></span>
                     @endif
                 </a>
+                @endif
 
+                @if(auth()->user()->hasPermission('view_contacts'))
                 <a href="{{ route('admin.contacts.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }} flex items-center justify-between">
                     <div class="flex items-center">
@@ -356,7 +368,9 @@
                             style="display: none;"></span>
                     @endif
                 </a>
+                @endif
 
+                @if(auth()->user()->hasPermission('view_reviews'))
                 <a href="{{ route('admin.reviews.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.reviews.*') ? 'active' : '' }} flex items-center justify-between">
                     <div class="flex items-center">
@@ -373,6 +387,7 @@
                             style="display: none;"></span>
                     @endif
                 </a>
+                @endif
 
                 @if(auth()->user()->isSuperAdmin())
                     <!-- SEO Menu -->
@@ -388,6 +403,7 @@
                     </a>
                 @endif
 
+                @if(auth()->user()->hasPermission('view_users'))
                 <a href="{{ route('admin.users.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }} flex items-center justify-between">
                     <div class="flex items-center">
@@ -404,10 +420,16 @@
                             style="display: none;"></span>
                     @endif
                 </a>
+                @endif
 
                 @if(auth()->user()->isSuperAdmin())
                     <div class="px-6 mt-6 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider sidebar-section-title">System Settings</div>
                     
+                    <a href="{{ route('admin.roles.index') }}"
+                        class="sidebar-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+                        <i class="bi bi-shield-lock-fill"></i> <span>Roles & Permissions</span>
+                    </a>
+
                     <a href="{{ route('admin.payment-settings.index') }}"
                         class="sidebar-link {{ request()->routeIs('admin.payment-settings.*') ? 'active' : '' }}">
                         <i class="bi bi-credit-card-fill"></i> <span>Payment Settings</span>
@@ -420,7 +442,7 @@
 
                     <a href="{{ route('admin.admin-user.index') }}"
                         class="sidebar-link {{ request()->routeIs('admin.admin-user.*') ? 'active' : '' }}">
-                        <i class="bi bi-shield-lock-fill"></i> <span>Admin User</span>
+                        <i class="bi bi-person-badge-fill"></i> <span>Admin User</span>
                     </a>
                 @endif
             </nav>
@@ -460,13 +482,10 @@
                         <div class="text-right hidden md:block">
                             <div class="text-sm font-bold text-slate-800">{{ auth()->user()->name }}</div>
                             <div class="text-xs text-slate-500">
-                                @if(auth()->user()->role === 'super_admin')
-                                    Super Admin
-                                @elseif(auth()->user()->role === 'admin')
-                                    Administrator
-                                @else
-                                    {{ ucfirst(auth()->user()->role) }}
-                                @endif
+                                @php
+                                    $userRole = auth()->user()->roles->first();
+                                @endphp
+                                {{ $userRole ? $userRole->name : ucfirst(auth()->user()->role) }}
                             </div>
                         </div>
                         <div
