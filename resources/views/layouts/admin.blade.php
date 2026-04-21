@@ -93,7 +93,7 @@
         .sidebar-link.active {
             background: var(--primary-color);
             color: white;
-            box-shadow: 0 10px 15px -3px rgba(79, 230, 229, 0.3);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
             transition: all 0.2s ease;
         }
 
@@ -296,13 +296,13 @@
                 @endif
 
                 @if(auth()->user()->hasPermission('manage_restaurant'))
-                    <a href="{{ route('admin.page.edit', 'restaurant') }}"
+                    <a href="{{ route('admin.page.edit.restaurant') }}"
                         class="sidebar-link {{ request()->is('admin/page/restaurant') ? 'active' : '' }}">
                         <i class="bi bi-egg-fried"></i> <span>Restaurant</span>
                     </a>
                 @endif
 
-                @if(auth()->user()->isSuperAdmin())
+                @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('manage_pages'))
                     <a href="{{ route('admin.page.contact_information.edit') }}"
                         class="sidebar-link {{ request()->routeIs('admin.page.contact_information.*') ? 'active' : '' }}">
                         <i class="bi bi-telephone-outbound"></i> <span>Contact Info</span>
@@ -351,7 +351,7 @@
                 </a>
                 @endif
 
-                @if(auth()->user()->hasPermission('view_contacts'))
+                @if(auth()->user()->hasPermission('view_feedbacks'))
                 <a href="{{ route('admin.contacts.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }} flex items-center justify-between">
                     <div class="flex items-center">
@@ -370,7 +370,7 @@
                 </a>
                 @endif
 
-                @if(auth()->user()->hasPermission('view_reviews'))
+                @if(auth()->user()->hasPermission('view_feedbacks'))
                 <a href="{{ route('admin.reviews.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.reviews.*') ? 'active' : '' }} flex items-center justify-between">
                     <div class="flex items-center">

@@ -51,20 +51,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         });
     });
 
-    // Page & Settings (Super Admin or Specific Permissions)
-    Route::middleware('super_admin')->group(function () {
-        // Modernized Home Page Routes
-        Route::resource('home/banners', BannerController::class)->names('home_banners');
-        Route::resource('home/promo_banners', PromoBannerController::class)->names('home_promo_banners');
-        Route::resource('home/offer_banners', OfferBannerController::class)->names('home_offer_banners');
-        Route::resource('home/services', ServiceController::class)->names('home_services');
-        Route::resource('home/clients', ClientController::class)->names('home_clients');
+    // Page Settings (Dynamic Permissions)
+    // 1. Restaurant Page Access
+    Route::middleware('permission:manage_restaurant')->group(function () {
+        Route::get('/page/restaurant', [PageSettingController::class, 'edit'])->defaults('page', 'restaurant')->name('page.edit.restaurant');
+        Route::put('/page/restaurant', [PageSettingController::class, 'update'])->defaults('page', 'restaurant')->name('page.update.restaurant');
+        Route::resource('restaurants', \App\Http\Controllers\Admin\RestaurantController::class);
+    });
 
-        // Page Settings (Dynamic)
-        Route::get('/home/restaurant', [PageSettingController::class, 'edit'])->defaults('page', 'home_restaurant')->name('home_restaurant');
-        Route::put('/home/restaurant', [PageSettingController::class, 'update'])->defaults('page', 'home_restaurant')->name('home_restaurant.update');
-        Route::get('/home/conference', [PageSettingController::class, 'edit'])->defaults('page', 'home_conference')->name('home_conference');
-        Route::put('/home/conference', [PageSettingController::class, 'update'])->defaults('page', 'home_conference')->name('home_conference.update');
+    // 2. Other Generic Pages Access
+    Route::middleware('permission:manage_pages')->group(function () {
+        Route::get('/page/{page}', [PageSettingController::class, 'edit'])->name('page.edit');
+        Route::put('/page/{page}', [PageSettingController::class, 'update'])->name('page.update');
 
         Route::prefix('page')->name('page.')->group(function () {
             Route::get('/about', [PageSettingController::class, 'edit'])->defaults('page', 'about')->name('about.edit');
@@ -78,6 +76,22 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::get('/contact-information', [PageSettingController::class, 'edit'])->defaults('page', 'contact_information')->name('contact_information.edit');
             Route::put('/contact-information', [PageSettingController::class, 'update'])->defaults('page', 'contact_information')->name('contact_information.update');
         });
+    });
+
+    // Page & Settings (Super Admin strictly protected)
+    Route::middleware('super_admin')->group(function () {
+        // Modernized Home Page Routes
+        Route::resource('home/banners', BannerController::class)->names('home_banners');
+        Route::resource('home/promo_banners', PromoBannerController::class)->names('home_promo_banners');
+        Route::resource('home/offer_banners', OfferBannerController::class)->names('home_offer_banners');
+        Route::resource('home/services', ServiceController::class)->names('home_services');
+        Route::resource('home/clients', ClientController::class)->names('home_clients');
+
+        // Home Page Specific Settings
+        Route::get('/home/restaurant', [PageSettingController::class, 'edit'])->defaults('page', 'home_restaurant')->name('home_restaurant');
+        Route::put('/home/restaurant', [PageSettingController::class, 'update'])->defaults('page', 'home_restaurant')->name('home_restaurant.update');
+        Route::get('/home/conference', [PageSettingController::class, 'edit'])->defaults('page', 'home_conference')->name('home_conference');
+        Route::put('/home/conference', [PageSettingController::class, 'update'])->defaults('page', 'home_conference')->name('home_conference.update');
 
         // SEO Management
         Route::prefix('seo')->name('seo.')->group(function () {
@@ -89,9 +103,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::put('/meta/{seo_meta}', [\App\Http\Controllers\Admin\SeoController::class, 'update'])->name('update');
             Route::delete('/meta/{seo_meta}', [\App\Http\Controllers\Admin\SeoController::class, 'destroy'])->name('destroy');
         });
-
-        Route::get('/page/{page}', [PageSettingController::class, 'edit'])->name('page.edit');
-        Route::put('/page/{page}', [PageSettingController::class, 'update'])->name('page.update');
 
         // Administrative (Payment & Admin Users)
         Route::resource('roles', RoleController::class);
@@ -113,11 +124,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         // Delete Actions
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         Route::delete('bookings/{booking}', [\App\Http\Controllers\Admin\BookingController::class, 'destroy'])->name('bookings.destroy');
-    });
-
-    // Restaurant
-    Route::middleware('permission:manage_restaurant')->group(function () {
-        Route::resource('restaurants', \App\Http\Controllers\Admin\RestaurantController::class);
     });
 
     // Users
