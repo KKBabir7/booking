@@ -30,7 +30,17 @@
                                     <i class="{{ $card['icon'] ?? 'bi bi-info-circle' }}"></i>
                                 </div>
                                 <h5 class="fw-bold mb-3">{{ $card['title'] ?? '' }}</h5>
-                                <p class="text-muted small mb-0">{{ $card['detail1'] ?? '' }}</p>
+                                <div class="text-muted small mb-0">
+                                    @if(isset($card['detail1']))
+                                        @if(is_array($card['detail1']))
+                                            @foreach($card['detail1'] as $detail)
+                                                <div class="mb-1">{{ $detail }}</div>
+                                            @endforeach
+                                        @else
+                                            {{ $card['detail1'] }}
+                                        @endif
+                                    @endif
+                                </div>
                                 @if(!empty($card['detail2']))
                                     <p class="{{ str_contains(strtolower($card['detail2']), 'available') ? 'text-primary' : 'text-muted' }} small fw-bold mt-2 mb-0">{{ $card['detail2'] }}</p>
                                 @endif

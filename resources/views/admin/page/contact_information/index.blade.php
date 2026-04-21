@@ -80,8 +80,25 @@
                         </div>
                         <div class="md:col-span-2 space-y-4">
                             <div>
-                                <label class="block text-xs font-black text-slate-400 uppercase mb-2">Primary Details</label>
-                                <input type="text" name="contact_cards[{{$index}}][detail1]" value="{{ $card['detail1'] ?? '' }}" placeholder="Main information line..." class="w-full px-4 py-2 border border-slate-100 rounded-xl focus:ring-1 focus:ring-indigo-400 text-sm">
+                                <label class="block text-xs font-black text-slate-400 uppercase mb-2 flex justify-between items-center">
+                                    Primary Details (e.g. Phone/Email)
+                                    <button type="button" class="add-detail text-indigo-500 hover:text-indigo-700 transition" data-card-index="{{$index}}">
+                                        <i class="bi bi-plus-circle-fill"></i> Add More
+                                    </button>
+                                </label>
+                                <div class="details-container space-y-2">
+                                    @php 
+                                        $details = is_array($card['detail1']) ? $card['detail1'] : [$card['detail1'] ?? '']; 
+                                    @endphp
+                                    @foreach($details as $detail)
+                                    <div class="flex gap-2">
+                                        <input type="text" name="contact_cards[{{$index}}][detail1][]" value="{{ $detail }}" placeholder="Main information line..." class="w-full px-4 py-2 border border-slate-100 rounded-xl focus:ring-1 focus:ring-indigo-400 text-sm">
+                                        <button type="button" class="remove-detail text-rose-500 hover:text-rose-700 transition px-2">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                    @endforeach
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-black text-slate-400 uppercase mb-2">Secondary Details / Status</label>
@@ -131,8 +148,20 @@
             </div>
             <div class="md:col-span-2 space-y-4">
                 <div>
-                    <label class="block text-xs font-black text-slate-400 uppercase mb-2">Primary Details</label>
-                    <input type="text" name="contact_cards[REPLACE_INDEX][detail1]" placeholder="Main information line..." class="w-full px-4 py-2 border border-slate-100 rounded-xl focus:ring-1 focus:ring-indigo-400 text-sm">
+                    <label class="block text-xs font-black text-slate-400 uppercase mb-2 flex justify-between items-center">
+                        Primary Details (e.g. Phone/Email)
+                        <button type="button" class="add-detail text-indigo-500 hover:text-indigo-700 transition" data-card-index="REPLACE_INDEX">
+                            <i class="bi bi-plus-circle-fill"></i> Add More
+                        </button>
+                    </label>
+                    <div class="details-container space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" name="contact_cards[REPLACE_INDEX][detail1][]" placeholder="Main information line..." class="w-full px-4 py-2 border border-slate-100 rounded-xl focus:ring-1 focus:ring-indigo-400 text-sm">
+                            <button type="button" class="remove-detail text-rose-500 hover:text-rose-700 transition px-2">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-black text-slate-400 uppercase mb-2">Secondary Details / Status</label>
@@ -158,6 +187,7 @@
 $(document).ready(function() {
     let index = {{ count($cards) }};
     
+    // Add New Card
     $(document).on('click', '#add-card', function(e) {
         e.preventDefault();
         const template = $('#card-template').html();
@@ -173,9 +203,36 @@ $(document).ready(function() {
         index++;
     });
 
+    // Remove Card
     $(document).on('click', '.remove-card', function(e) {
         e.preventDefault();
         $(this).closest('.contact-card-item').remove();
+    });
+
+    // Add Detail Row inside a card
+    $(document).on('click', '.add-detail', function() {
+        const cardIndex = $(this).data('card-index');
+        const container = $(this).closest('div').find('.details-container');
+        const html = `
+            <div class="flex gap-2">
+                <input type="text" name="contact_cards[${cardIndex}][detail1][]" placeholder="Main information line..." class="w-full px-4 py-2 border border-slate-100 rounded-xl focus:ring-1 focus:ring-indigo-400 text-sm">
+                <button type="button" class="remove-detail text-rose-500 hover:text-rose-700 transition px-2">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+        container.append(html);
+    });
+
+    // Remove Detail Row
+    $(document).on('click', '.remove-detail', function() {
+        const container = $(this).closest('.details-container');
+        // Prevent removing the last detail row for better UX, but allow if user wants to delete entire card
+        if (container.find('.flex').length > 1) {
+            $(this).closest('.flex').remove();
+        } else {
+            $(this).closest('.flex').find('input').val('');
+        }
     });
 });
 </script>
