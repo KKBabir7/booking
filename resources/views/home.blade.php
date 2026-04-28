@@ -483,42 +483,47 @@
                   </div>
 
                   <!-- Footer: Pricing -->
-                  <div class="d-flex justify-content-between align-items-end mt-auto pt-3 border-top">
-                
-                <div class="offer-action-left d-flex flex-column">
-                  @if($room->bookings && $room->bookings->count() > 0)
-                    <a href="#" class="text-danger fw-bold d-flex align-items-center text-decoration-none bg-danger bg-opacity-10 px-2 py-1 rounded-pill mt-2 d-inline-block text-center" style="font-size: 0.65rem; width: max-content;"
-                                data-bs-toggle="modal" data-bs-target="#unavailableDatesModal"
-                                data-room-name="{{ $room->name }}"
-                                data-dates='{{ $room->bookings->map(function ($b) { return ["start" => \Carbon\Carbon::parse($b->check_in)->format("d M Y"), "end" => \Carbon\Carbon::parse($b->check_out)->format("d M Y")]; })->toJson() }}'
-                                onclick="event.stopPropagation();">
-                      <i class="bi bi-calendar-x me-1"></i> Unavailable Dates
-                    </a>
-                  @else
-                    <!-- Invisible placeholder to enforce identical footer heights across all cards, preventing ugly flexbox gaps -->
-                    <div class="px-2 py-1 mt-2 mb-0" style="font-size: 0.65rem; visibility: hidden; pointer-events: none;">
-                      <i class="bi bi-calendar-x me-1"></i> Space
+                  <div class="mt-auto pt-3 border-top">
+                    <!-- Pricing Section (Blue Mark) -->
+                    <div class="offer-pricing-area d-flex justify-content-end pb-2">
+                        <div class="pricing-flex d-flex align-items-center">
+                          @if($nights > 1)
+                            <div class="price-current fw-bolder text-dark fs-4 lh-1">{{ $currencyService->format($room->price * $nights) }}</div>
+                          @else
+                            @if($room->old_price > $room->price)
+                              <div class="price-old text-muted extra-small me-2"><del>{{ $currencyService->format($room->old_price) }}</del></div>
+                            @endif
+                            <div class="price-current fw-bolder text-dark fs-4 lh-1">{{ $currencyService->format($room->price) }}</div>
+                          @endif
+                        </div>
                     </div>
-                  @endif
-                </div>
 
-                <div class="offer-pricing-area d-flex flex-column align-items-end text-end pb-1">
-                  <div class="pricing-flex d-flex align-items-center justify-content-end mb-1">
-                    @if($nights > 1)
-                      <div class="price-current fw-bolder text-dark fs-4 lh-1">{{ $currencyService->format($room->price * $nights) }}</div>
-                    @else
-                      @if($room->old_price > $room->price)
-                        <div class="price-old text-muted extra-small me-2"><del>{{ $currencyService->format($room->old_price) }}</del></div>
-                      @endif
-                      <div class="price-current fw-bolder text-dark fs-4 lh-1">{{ $currencyService->format($room->price) }}</div>
-                    @endif
+                    <!-- Actions Section (Red Mark) -->
+                    <div class="offer-action-bottom d-flex align-items-center justify-content-between">
+                      <div class="left-action">
+                        @if($room->bookings && $room->bookings->count() > 0)
+                          <a href="#" class="text-danger fw-bold d-flex align-items-center text-decoration-none bg-danger bg-opacity-10 px-2 py-1 rounded-pill d-inline-block text-center" style="font-size: 0.65rem; width: max-content;"
+                                  data-bs-toggle="modal" data-bs-target="#unavailableDatesModal"
+                                  data-room-name="{{ $room->name }}"
+                                  data-dates='{{ $room->bookings->map(function ($b) { return ["start" => \Carbon\Carbon::parse($b->check_in)->format("d M Y"), "end" => \Carbon\Carbon::parse($b->check_out)->format("d M Y")]; })->toJson() }}'
+                                  onclick="event.stopPropagation();">
+                            <i class="bi bi-calendar-x me-1"></i> Unavailable Dates
+                          </a>
+                        @else
+                          <!-- Invisible placeholder to enforce identical footer heights across all cards, preventing ugly flexbox gaps -->
+                          <div class="px-2 py-1 mb-0" style="font-size: 0.65rem; visibility: hidden; pointer-events: none;">
+                            <i class="bi bi-calendar-x me-1"></i> Space
+                          </div>
+                        @endif
+                      </div>
+
+                      <div class="right-action">
+                        <span class="text-primary fw-bold d-flex align-items-center" style="font-size: 0.9rem;">
+                          View deal <i class="bi bi-chevron-right ms-1" style="font-size: 0.8rem;"></i>
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <span class="text-primary fw-bold mt-1 d-flex align-items-center" style="font-size: 0.9rem;">
-                    View deal <i class="bi bi-chevron-right ms-1" style="font-size: 0.8rem;"></i>
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
